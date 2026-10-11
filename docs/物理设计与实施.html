@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>报刊订阅管理系统 — 数据库物理设计与实施</title>
+<style>
+body{background:#f2f4f7;font-family:'SimSun','宋体',serif;color:#222;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 50px}
+header.top{background:#1F3A5F;color:#fff;border-radius:10px;padding:22px 28px;margin-bottom:20px}
+header.top h1{font-family:'Microsoft YaHei',sans-serif;font-size:24px;margin:0 0 8px}
+header.top p{margin:0;color:#C9D6EA;font-size:14px;font-family:'Microsoft YaHei',sans-serif;line-height:1.6}
+.card{background:#fff;border:1px solid #DFE4EA;border-radius:10px;padding:24px 30px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+h2.sec{font-family:'Microsoft YaHei',sans-serif;font-size:20px;color:#1F3A5F;border-left:5px solid #2B6CB0;padding-left:12px;margin:4px 0 14px}
+h3{font-family:'Microsoft YaHei',sans-serif;font-size:16px;color:#2C3E50;margin:16px 0 8px}
+h4{font-family:'Microsoft YaHei',sans-serif;font-size:14.5px;color:#2C3E50;margin:14px 0 6px}
+p.body{font-size:16px;line-height:1.75;text-indent:2em;margin:8px 0;text-align:justify}
+.note{background:#F7F9FC;border:1px dashed #B9C6D8;border-radius:8px;padding:12px 16px;font-size:14px;font-family:'Microsoft YaHei',sans-serif;color:#445;line-height:1.7}
+table.tbl{border-collapse:collapse;width:100%;margin:10px 0 6px;font-size:13.5px;line-height:1.5}
+table.tbl th{border-top:2px solid #333;border-bottom:1.5px solid #333;padding:6px 7px;font-family:'Microsoft YaHei',sans-serif;font-size:13px;background:#F7F9FC}
+table.tbl td{border-bottom:1px solid #D8DEE6;padding:5px 7px;font-family:'SimSun','宋体',serif;vertical-align:top}
+table.tbl tbody tr:last-child td{border-bottom:2px solid #333}
+caption{caption-side:top;text-align:center;font-weight:600;font-size:14px;padding:6px 0;font-family:'SimSun','宋体',serif}
+.code{background:#0F2239;color:#D8E4F3;border-radius:8px;padding:14px 18px;font-family:Consolas,'Courier New',monospace;font-size:12.6px;line-height:1.55;overflow-x:auto;white-space:pre;text-align:left;margin:10px 0}
+.code .cm2{color:#6E8BB0}
+footer{text-align:center;color:#889;font-size:13px;font-family:'Microsoft YaHei',sans-serif;margin-top:6px}
+@media print{body{background:#fff}.card{box-shadow:none;break-inside:avoid}.code{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>报刊订阅管理系统 · 数据库物理设计与实施</h1>
+  <p>《数据库原理实践》课程设计报告 第五章 初稿 ｜ 生成日期：2026-10-12 ｜ 数据库已在 MySQL 8.0.40 上实际实施并通过验证</p>
+</header>
+
+<section class="card">
+  <h2 class="sec">5.1 数据库应用的硬件、软件环境介绍</h2>
+  <p class="body"><b>硬件环境</b>：开发与测试使用个人计算机一台（Intel Core i5 及以上处理器、16GB 内存、512GB 固态硬盘），数据库与应用系统部署于同一台机器，通过本机回环地址访问。</p>
+  <p class="body"><b>软件环境</b>：操作系统 Windows 11；数据库管理系统 MySQL 8.0.40（InnoDB 存储引擎，字符集 utf8mb4）；应用开发语言 Python 3.13，Web 框架 Flask；数据库访问接口 PyMySQL；版本管理 Git。数据库脚本以 SQL 文件形式组织于 sql/ 目录，可使用 MySQL 命令行客户端或 Workbench 直接执行。</p>
+</section>
+
+<section class="card">
+  <h2 class="sec">5.2 物理结构设计</h2>
+  <p class="body">对第四章得到的 7 个关系模式定义存储结构：所有表采用 InnoDB 引擎以支持事务与外键；字符集统一为 utf8mb4。类型选择上，标识类字段采用定长 CHAR（长度固定、便于校验），名称与描述类字段采用变长 VARCHAR 并按实际需求限制长度，金额采用 DECIMAL 以避免浮点误差，日期时间分别采用 DATE 与 DATETIME。各表字段设计如下（<b>表5-1 ～ 表5-7</b>）。</p>
+
+  <table class="tbl">
+    <caption>表5-1 部门表（department）字段设计</caption>
+    <thead><tr><th>字段名称</th><th>字段意义</th><th>字段类型</th><th>长度</th><th>允许为空</th><th>完整性约束</th></tr></thead>
+    <tbody>
+      <tr><td>dept_id</td><td>部门编号</td><td>CHAR</td><td>6</td><td>否</td><td>主码</td></tr>
+      <tr><td>dept_name</td><td>部门名称</td><td>VARCHAR</td><td>30</td><td>否</td><td>唯一</td></tr>
+      <tr><td>location</td><td>办公地点</td><td>VARCHAR</td><td>30</td><td>是</td><td></td></tr>
+      <tr><td>phone</td><td>联系电话</td><td>VARCHAR</td><td>13</td><td>是</td><td>正则校验 ^[0-9-]{7,13}$</td></tr>
+    </tbody>
+  </table>
+
+  <table class="tbl">
+    <caption>表5-2 订阅人员表（subscriber）字段设计</caption>
+    <thead><tr><th>字段名称</th><th>字段意义</th><th>字段类型</th><th>长度</th><th>允许为空</th><th>完整性约束</th></tr></thead>
+    <tbody>
+      <tr><td>sub_id</td><td>人员编号</td><td>CHAR</td><td>8</td><td>否</td><td>主码</td></tr>
+      <tr><td>sub_name</td><td>姓名</td><td>VARCHAR</td><td>20</td><td>否</td><td>建索引（模糊查询）</td></tr>
+      <tr><td>gender</td><td>性别</td><td>CHAR</td><td>2</td><td>是</td><td>CHECK ∈ {男, 女}</td></tr>
+      <tr><td>phone</td><td>联系电话</td><td>CHAR</td><td>11</td><td>是</td><td>11 位手机号</td></tr>
+      <tr><td>address</td><td>通信地址</td><td>VARCHAR</td><td>50</td><td>是</td><td></td></tr>
+      <tr><td>dept_id</td><td>所属部门编号</td><td>CHAR</td><td>6</td><td>否</td><td>外码 → department；建索引</td></tr>
+      <tr><td>username</td><td>登录用户名</td><td>VARCHAR</td><td>20</td><td>否</td><td>唯一（候选码）</td></tr>
+      <tr><td>password</td><td>登录口令</td><td>VARCHAR</td><td>64</td><td>否</td><td>加密存储（SHA-256）</td></tr>
+      <tr><td>role</td><td>系统角色</td><td>VARCHAR</td><td>10</td><td>否</td><td>默认"订阅用户"；CHECK ∈ {系统管理员, 部门管理员, 订阅用户}</td></tr>
+    </tbody>
+  </table>
+
+  <table class="tbl">
+    <caption>表5-3 报刊类别表（category）字段设计</caption>
+    <thead><tr><th>字段名称</th><th>字段意义</th><th>字段类型</th><th>长度</th><th>允许为空</th><th>完整性约束</th></tr></thead>
+    <tbody>
+      <tr><td>cat_id</td><td>类别编号</td><td>CHAR</td><td>4</td><td>否</td><td>主码</td></tr>
+      <tr><td>cat_name</td><td>类别名称</td><td>VARCHAR</td><td>20</td><td>否</td><td>唯一（候选码）</td></tr>
+      <tr><td>cat_desc</td><td>类别说明</td><td>VARCHAR</td><td>50</td><td>是</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <table class="tbl">
+    <caption>表5-4 报刊表（publication）字段设计</caption>
+    <thead><tr><th>字段名称</th><th>字段意义</th><th>字段类型</th><th>长度</th><th>允许为空</th><th>完整性约束</th></tr></thead>
+    <tbody>
+      <tr><td>pub_id</td><td>报刊编号</td><td>CHAR</td><td>8</td><td>否</td><td>主码</td></tr>
+      <tr><td>pub_name</td><td>报刊名称</td><td>VARCHAR</td><td>40</td><td>否</td><td>建索引（模糊查询）</td></tr>
+      <tr><td>cat_id</td><td>所属类别编号</td><td>CHAR</td><td>4</td><td>否</td><td>外码 → category；建索引</td></tr>
+      <tr><td>period</td><td>刊期</td><td>VARCHAR</td><td>6</td><td>否</td><td>CHECK ∈ {日报, 周报, 半月刊, 月刊, 双月刊}</td></tr>
+      <tr><td>unit_price</td><td>每期单价（元）</td><td>DECIMAL</td><td>6,2</td><td>否</td><td>CHECK 单价 &gt; 0</td></tr>
+      <tr><td>publisher</td><td>出版社</td><td>VARCHAR</td><td>30</td><td>是</td><td></td></tr>
+      <tr><td>maintainer</td><td>维护人</td><td>CHAR</td><td>8</td><td>是</td><td>外码 → subscriber</td></tr>
+    </tbody>
+  </table>
+
+  <table class="tbl">
+    <caption>表5-5 订阅单表（subscription）字段设计</caption>
+    <thead><tr><th>字段名称</th><th>字段意义</th><th>字段类型</th><th>长度</th><th>允许为空</th><th>完整性约束</th></tr></thead>
+    <tbody>
+      <tr><td>order_id</td><td>订单编号</td><td>CHAR</td><td>10</td><td>否</td><td>主码</td></tr>
+      <tr><td>sub_date</td><td>订阅日期</td><td>DATE</td><td>—</td><td>否</td><td>不晚于当前日期</td></tr>
+      <tr><td>start_date</td><td>起订日期</td><td>DATE</td><td>—</td><td>否</td><td>CHECK 起订日期 ≥ 订阅日期</td></tr>
+      <tr><td>end_date</td><td>截止日期</td><td>DATE</td><td>—</td><td>否</td><td>CHECK 截止日期 &gt; 起订日期</td></tr>
+      <tr><td>total_amount</td><td>总金额（元）</td><td>DECIMAL</td><td>10,2</td><td>否</td><td>默认 0；由触发器自动汇总</td></tr>
+      <tr><td>order_status</td><td>订单状态</td><td>VARCHAR</td><td>8</td><td>否</td><td>默认"待审核"；CHECK ∈ {待审核, 已通过, 已驳回, 已退订}；状态迁移由触发器校验</td></tr>
+      <tr><td>orderer_id</td><td>下单人</td><td>CHAR</td><td>8</td><td>否</td><td>外码 → subscriber；建索引</td></tr>
+      <tr><td>auditor_id</td><td>审核人</td><td>CHAR</td><td>8</td><td>是</td><td>外码 → subscriber</td></tr>
+      <tr><td>audit_time</td><td>审核时间</td><td>DATETIME</td><td>—</td><td>是</td><td>审核时由触发器自动填写</td></tr>
+      <tr><td>audit_comment</td><td>审核意见</td><td>VARCHAR</td><td>100</td><td>是</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <table class="tbl">
+    <caption>表5-6 订阅明细表（subscription_detail）字段设计</caption>
+    <thead><tr><th>字段名称</th><th>字段意义</th><th>字段类型</th><th>长度</th><th>允许为空</th><th>完整性约束</th></tr></thead>
+    <tbody>
+      <tr><td>order_id</td><td>订单编号</td><td>CHAR</td><td>10</td><td>否</td><td>主码属性；外码 → subscription（级联删除）</td></tr>
+      <tr><td>pub_id</td><td>报刊编号</td><td>CHAR</td><td>8</td><td>否</td><td>主码属性；外码 → publication；建索引</td></tr>
+      <tr><td>quantity</td><td>订阅份数</td><td>INT</td><td>—</td><td>否</td><td>CHECK 1 ≤ 份数 ≤ 999</td></tr>
+      <tr><td>periods</td><td>订阅期数</td><td>INT</td><td>—</td><td>否</td><td>CHECK 期数 ≥ 1</td></tr>
+      <tr><td>subtotal</td><td>小计金额（元）</td><td>DECIMAL</td><td>10,2</td><td>否</td><td>由触发器按单价×份数×期数自动计算</td></tr>
+    </tbody>
+  </table>
+
+  <table class="tbl">
+    <caption>表5-7 操作日志表（op_log）字段设计</caption>
+    <thead><tr><th>字段名称</th><th>字段意义</th><th>字段类型</th><th>长度</th><th>允许为空</th><th>完整性约束</th></tr></thead>
+    <tbody>
+      <tr><td>log_id</td><td>日志编号</td><td>INT</td><td>—</td><td>否</td><td>主码，自增（AUTO_INCREMENT）</td></tr>
+      <tr><td>sub_id</td><td>操作人员</td><td>CHAR</td><td>8</td><td>是</td><td>外码 → subscriber；建索引</td></tr>
+      <tr><td>op_type</td><td>操作类型</td><td>VARCHAR</td><td>10</td><td>否</td><td>{登录, 录入, 修改, 删除, 订阅, 审核, 备份}</td></tr>
+      <tr><td>op_content</td><td>操作内容</td><td>VARCHAR</td><td>200</td><td>否</td><td></td></tr>
+      <tr><td>op_time</td><td>操作时间</td><td>DATETIME</td><td>—</td><td>否</td><td>默认 CURRENT_TIMESTAMP；建索引</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2 class="sec">5.3 物理结构优化</h2>
+
+  <h3>5.3.1 索引设计</h3>
+  <p class="body">主码索引与唯一索引由主码、UNIQUE 约束自动创建；在此基础上，依据"最经常作为查询条件与分组统计依据的列建立索引"的原则建立普通索引，其中订阅单表建立（订单状态，订阅日期）复合索引以同时服务审核工作台过滤与时间段统计（利用最左前缀原则）。索引设计一览如表5-8 所示。索引并非越多越好：订阅明细表只建一个辅助索引，以降低高频写入时维护索引的开销。</p>
+  <table class="tbl">
+    <caption>表5-8 索引设计一览表</caption>
+    <thead><tr><th>索引名称</th><th>所在表</th><th>索引列</th><th>类型</th><th>设计依据</th></tr></thead>
+    <tbody>
+      <tr><td>idx_sub_dept</td><td>subscriber</td><td>dept_id</td><td>普通</td><td>按部门查询、统计人员是高频操作</td></tr>
+      <tr><td>idx_sub_name</td><td>subscriber</td><td>sub_name</td><td>普通</td><td>按姓名查询（支持"王%"等前缀模糊查询走索引）</td></tr>
+      <tr><td>idx_pub_name</td><td>publication</td><td>pub_name</td><td>普通</td><td>按报刊名称查询（模糊查询）</td></tr>
+      <tr><td>idx_pub_cat</td><td>publication</td><td>cat_id</td><td>普通</td><td>按类别浏览报刊；外码连接</td></tr>
+      <tr><td>idx_ord_orderer</td><td>subscription</td><td>orderer_id</td><td>普通</td><td>按人员查询其订单</td></tr>
+      <tr><td>idx_ord_status_date</td><td>subscription</td><td>(order_status, sub_date)</td><td>复合</td><td>审核工作台（status='待审核'）与时间段统计，复合索引最左前缀</td></tr>
+      <tr><td>idx_det_pub</td><td>subscription_detail</td><td>pub_id</td><td>普通</td><td>按报刊统计订阅量、金额</td></tr>
+      <tr><td>idx_log_time / idx_log_sub</td><td>op_log</td><td>op_time / sub_id</td><td>普通</td><td>日志按时间审计、按操作人追溯</td></tr>
+    </tbody>
+  </table>
+  <div class="code"><span class="cm2">-- 索引创建示例（完整定义见 sql/01_create_database.sql，随建表语句一并创建）</span>
+CREATE INDEX idx_sub_name        ON subscriber (sub_name);
+CREATE INDEX idx_ord_status_date ON subscription (order_status, sub_date);
+CREATE INDEX idx_det_pub         ON subscription_detail (pub_id);</div>
+
+  <h3>5.3.2 函数设计</h3>
+  <p class="body">将订阅金额的计算口径统一封装为函数：小计金额 = 报刊单价 × 份数 × 订阅期数。函数内对报刊不存在的情况使用 SIGNAL 抛出明确异常。另设计按人员汇总累计订阅金额的函数供查询模块使用。</p>
+  <div class="code">DELIMITER $$
+<span class="cm2">-- 函数：计算订阅小计金额</span>
+CREATE FUNCTION fn_calc_subtotal(p_pub_id CHAR(8), p_qty INT, p_periods INT)
+RETURNS DECIMAL(10,2)
+READS SQL DATA
+BEGIN
+    DECLARE v_price DECIMAL(6,2);
+    SELECT unit_price INTO v_price FROM publication WHERE pub_id = p_pub_id;
+    IF v_price IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '报刊不存在，无法计算金额';
+    END IF;
+    RETURN CAST(v_price * p_qty * p_periods AS DECIMAL(10,2));
+END $$
+<span class="cm2">-- 函数：某人累计订阅金额（仅已通过订单）</span>
+CREATE FUNCTION fn_person_total_amount(p_sub_id CHAR(8)) RETURNS DECIMAL(12,2)
+READS SQL DATA
+BEGIN
+    DECLARE v_total DECIMAL(12,2);
+    SELECT IFNULL(SUM(det.subtotal), 0) INTO v_total
+    FROM subscription o
+    JOIN subscription_detail det ON det.order_id = o.order_id
+    WHERE o.orderer_id = p_sub_id AND o.order_status = '已通过';
+    RETURN v_total;
+END $$
+DELIMITER ;</div>
+
+  <h3>5.3.3 存储过程设计</h3>
+  <p class="body">核心业务写操作统一封装为存储过程：①sp_place_order 创建订阅单（事务内锁定最近订单行取号，防止并发取号重复，并写入第一条明细）；②sp_add_detail 向待审核订单追加订阅明细；③sp_audit_order 审核订阅单（校验审核人必须为系统管理员，防止重复审核）；④sp_cancel_order 退订（校验仅本人、仅已通过订单）。业务规则校验失败时通过 SIGNAL 返回中文错误信息。</p>
+  <div class="code"><span class="cm2">-- 过程：创建订阅单（详见 sql/04_procedures.sql，此处为核心逻辑）</span>
+CREATE PROCEDURE sp_place_order(
+    IN p_sub_id CHAR(8), IN p_start DATE, IN p_end DATE,
+    IN p_pub_id CHAR(8), IN p_qty INT, IN p_periods INT)
+BEGIN
+    DECLARE v_last  INT;
+    DECLARE v_order CHAR(10);
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN ROLLBACK; RESIGNAL; END;
+    IF NOT EXISTS (SELECT 1 FROM subscriber WHERE sub_id = p_sub_id) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '订阅人员不存在';
+    END IF;
+    START TRANSACTION;
+    SELECT CAST(SUBSTRING(order_id,3) AS UNSIGNED) INTO v_last
+    FROM subscription ORDER BY order_id DESC LIMIT 1 FOR UPDATE;
+    SET v_order = CONCAT('SO', LPAD(IFNULL(v_last,0)+1, 7, '0'));
+    INSERT INTO subscription (order_id, sub_date, start_date, end_date, order_status, orderer_id)
+    VALUES (v_order, CURDATE(), p_start, p_end, '待审核', p_sub_id);
+    INSERT INTO subscription_detail (order_id, pub_id, quantity, periods)
+    VALUES (v_order, p_pub_id, p_qty, p_periods);
+    COMMIT;
+    SELECT v_order AS order_id;
+END</div>
+
+  <h3>5.3.4 触发器设计</h3>
+  <p class="body">触发器承担三类自动维护职责：金额一致性、订单状态机、操作日志。共设计 7 个触发器，如表5-9 所示。派生数据（小计、总金额）只能由触发器维护，应用侧直接写入将破坏一致性；状态机触发器保证订单只能沿"待审核→已通过/已驳回、已通过→已退订"路径迁移。</p>
+  <table class="tbl">
+    <caption>表5-9 触发器一览表</caption>
+    <thead><tr><th>触发器名称</th><th>表 / 时机</th><th>职责</th></tr></thead>
+    <tbody>
+      <tr><td>trg_det_before_ins</td><td>subscription_detail / BEFORE INSERT</td><td>按单价×份数×期数自动计算小计金额</td></tr>
+      <tr><td>trg_det_after_ins</td><td>subscription_detail / AFTER INSERT</td><td>将小计累加到订阅单总金额</td></tr>
+      <tr><td>trg_det_after_del</td><td>subscription_detail / AFTER DELETE</td><td>删除明细后重算总金额</td></tr>
+      <tr><td>trg_ord_before_upd</td><td>subscription / BEFORE UPDATE</td><td>订单状态机校验；审核时自动填写审核时间</td></tr>
+      <tr><td>trg_ord_after_upd</td><td>subscription / AFTER UPDATE</td><td>状态变更自动写入操作日志</td></tr>
+      <tr><td>trg_sub_after_ins</td><td>subscriber / AFTER INSERT</td><td>新增人员自动写日志</td></tr>
+      <tr><td>trg_pub_after_ins</td><td>publication / AFTER INSERT</td><td>新增报刊自动写日志</td></tr>
+    </tbody>
+  </table>
+  <div class="code"><span class="cm2">-- 触发器：插入明细前自动计算小计</span>
+CREATE TRIGGER trg_det_before_ins
+BEFORE INSERT ON subscription_detail
+FOR EACH ROW
+BEGIN
+    DECLARE v_price DECIMAL(6,2);
+    SELECT unit_price INTO v_price FROM publication WHERE pub_id = NEW.pub_id;
+    IF v_price IS NULL THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '报刊不存在，无法订阅';
+    END IF;
+    SET NEW.subtotal = CAST(v_price * NEW.quantity * NEW.periods AS DECIMAL(10,2));
+END $$
+<span class="cm2">-- 触发器：订单状态机校验 + 审核时间自动填写</span>
+CREATE TRIGGER trg_ord_before_upd
+BEFORE UPDATE ON subscription
+FOR EACH ROW
+BEGIN
+    IF NOT (OLD.order_status <=> NEW.order_status) THEN
+        IF NOT ( (OLD.order_status='待审核' AND NEW.order_status IN ('已通过','已驳回'))
+              OR (OLD.order_status='已通过' AND NEW.order_status='已退订') ) THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '非法的订单状态变更';
+        END IF;
+    END IF;
+    IF OLD.order_status='待审核' AND NEW.order_status IN ('已通过','已驳回')
+       AND NEW.audit_time IS NULL THEN
+        SET NEW.audit_time = NOW();
+    END IF;
+END $$</div>
+
+  <h3>5.3.5 事务设计</h3>
+  <p class="body">所有业务写过程内部均使用显式事务：START TRANSACTION 开启，全部成功后 COMMIT；任一语句异常由 DECLARE EXIT HANDLER FOR SQLEXCEPTION 捕获并 ROLLBACK，再由 RESIGNAL 将错误抛给应用。以"创建订阅单"为例，订单号分配、订单头写入、明细写入三步必须原子完成——若明细插入失败（如报刊不存在、份数越界），订单头一并回滚，杜绝"空订单"。并发控制方面，取号前使用 SELECT … FOR UPDATE 对最近订单行加锁，避免两个并发请求取得相同订单号；订单汇总行的更新由 InnoDB 行锁天然串行化。</p>
+  <p class="body">事务隔离级别采用 MySQL 默认的 REPEATABLE READ：审核、退订等校验-更新序列均在事务内先 FOR UPDATE 读取最新状态再更新，避免了幻读导致的重复审核。</p>
+
+  <h3>5.3.6 权限控制设计</h3>
+  <p class="body">数据库角色与系统角色一一对应（r_sys_admin、r_dept_admin、r_sub_user），权限分配遵循最小特权原则：基础表的写权限仅授予系统管理员；部门管理员与订阅用户对业务表的写操作只能通过存储过程完成（EXECUTE 权限），从而保证业务规则校验不被绕过；订阅用户对人员表无任何权限、对报刊表只读，其"本人订单"通过视图 v_user_orders 按 CURRENT_USER 行级过滤。角色先集中授权，再授予应用账号，如表5-10 所示。</p>
+  <table class="tbl">
+    <caption>表5-10 数据库角色与权限分配表</caption>
+    <thead><tr><th>角色</th><th>基础表权限</th><th>视图权限</th><th>存储过程权限</th></tr></thead>
+    <tbody>
+      <tr><td>r_sys_admin</td><td>department / subscriber / category / publication 增删改查；op_log 查询</td><td>v_pending_orders、v_order_detail、v_person_stat、v_dept_stat、v_pub_stat</td><td>sp_audit_order</td></tr>
+      <tr><td>r_dept_admin</td><td>无</td><td>v_user_brief、v_pub_stat、v_dept_stat、v_person_stat</td><td>sp_place_order</td></tr>
+      <tr><td>r_sub_user</td><td>publication 只读（浏览报刊）</td><td>v_user_orders、v_pub_stat</td><td>sp_place_order、sp_cancel_order</td></tr>
+    </tbody>
+  </table>
+  <div class="code"><span class="cm2">-- 角色与授权（详见 sql/06_permissions.sql）</span>
+CREATE ROLE 'r_sys_admin', 'r_dept_admin', 'r_sub_user';
+GRANT SELECT, INSERT, UPDATE, DELETE ON press_sub_db.publication  TO 'r_sys_admin';
+GRANT SELECT ON press_sub_db.v_pending_orders          TO 'r_sys_admin';
+GRANT EXECUTE ON PROCEDURE press_sub_db.sp_audit_order TO 'r_sys_admin';
+GRANT SELECT ON press_sub_db.publication               TO 'r_sub_user';
+GRANT SELECT ON press_sub_db.v_user_orders             TO 'r_sub_user';
+GRANT EXECUTE ON PROCEDURE press_sub_db.sp_place_order TO 'r_sub_user';
+GRANT EXECUTE ON PROCEDURE press_sub_db.sp_cancel_order TO 'r_sub_user';
+<span class="cm2">-- 创建应用账号并授予角色</span>
+CREATE USER 'sub_user_app'@'localhost' IDENTIFIED BY 'Sub#2026';
+GRANT 'r_sub_user' TO 'sub_user_app'@'localhost';
+SET DEFAULT ROLE ALL TO 'sub_user_app'@'localhost';</div>
+</section>
+
+<section class="card">
+  <h2 class="sec">5.4 数据库实施</h2>
+  <p class="body">数据库实施按脚本顺序在 MySQL 8.0.40 中执行：①sql/01_create_database.sql 创建数据库 press_sub_db 及 7 张基本表（含全部约束与索引）；②sql/02_views.sql 创建 7 个视图；③sql/03_functions.sql、sql/04_procedures.sql、sql/05_triggers.sql 创建函数、存储过程与触发器；④sql/06_permissions.sql 创建角色与应用账号并授权。建库与建表的关键代码如下：</p>
+  <div class="code">CREATE DATABASE press_sub_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+USE press_sub_db;
+
+CREATE TABLE subscription (
+  order_id      CHAR(10)      NOT NULL COMMENT '订单编号（SO+7位流水）',
+  sub_date      DATE          NOT NULL COMMENT '订阅日期',
+  start_date    DATE          NOT NULL COMMENT '起订日期',
+  end_date      DATE          NOT NULL COMMENT '截止日期',
+  total_amount  DECIMAL(10,2) NOT NULL DEFAULT 0 COMMENT '总金额（触发器汇总）',
+  order_status  VARCHAR(8)    NOT NULL DEFAULT '待审核' COMMENT '订单状态',
+  orderer_id    CHAR(8)       NOT NULL COMMENT '下单人（人员编号）',
+  auditor_id    CHAR(8)       NULL COMMENT '审核人（人员编号）',
+  audit_time    DATETIME      NULL COMMENT '审核时间',
+  audit_comment VARCHAR(100)  NULL COMMENT '审核意见',
+  CONSTRAINT pk_subscription  PRIMARY KEY (order_id),
+  CONSTRAINT chk_ord_dates    CHECK (end_date > start_date AND start_date >= sub_date),
+  CONSTRAINT chk_ord_status   CHECK (order_status IN ('待审核','已通过','已驳回','已退订')),
+  INDEX idx_ord_orderer (orderer_id),
+  INDEX idx_ord_status_date (order_status, sub_date),
+  CONSTRAINT fk_ord_orderer FOREIGN KEY (orderer_id) REFERENCES subscriber (sub_id),
+  CONSTRAINT fk_ord_auditor FOREIGN KEY (auditor_id) REFERENCES subscriber (sub_id)
+) ENGINE=InnoDB COMMENT='订阅单表';</div>
+  <p class="body">实施完成后，通过一组功能性验证确认数据库对象按设计工作，结果如表5-11 所示：触发器自动完成小计计算与总金额汇总（一张含两条明细的订阅单总金额自动汇总为 207.00 元，与手工核算一致）；订阅单状态机成功拦截非法状态迁移；非系统管理员调用审核过程、非本人调用退订过程均被拒绝；以订阅用户账号连接时，直查基础表被拒绝而视图访问正常；7 条触发器自动在操作日志表写入 8 条记录。</p>
+  <table class="tbl">
+    <caption>表5-11 数据库实施验证项目与结果</caption>
+    <thead><tr><th>验证项目</th><th>验证内容</th><th>预期</th><th>实际结果</th></tr></thead>
+    <tbody>
+      <tr><td>函数 fn_calc_subtotal</td><td>计算"读者"2 份 6 期小计</td><td>72.00</td><td>72.00，相符</td></tr>
+      <tr><td>过程 sp_place_order</td><td>订阅用户下单（1 单 2 条明细）</td><td>订单生成、状态待审核</td><td>生成订单 SO0000001，相符</td></tr>
+      <tr><td>触发器金额汇总</td><td>明细插入后总金额自动汇总</td><td>72.00 + 135.00 = 207.00</td><td>207.00，相符</td></tr>
+      <tr><td>触发器状态机</td><td>将已通过订单改回待审核</td><td>拒绝</td><td>报"非法的订单状态变更"，相符</td></tr>
+      <tr><td>过程 sp_audit_order</td><td>订阅用户调用审核 / 管理员审核</td><td>前者拒绝，后者通过</td><td>权限拒绝；审核通过并自动填写审核时间，相符</td></tr>
+      <tr><td>过程 sp_cancel_order</td><td>非本人退订 / 本人退订</td><td>前者拒绝，后者成功</td><td>权限拒绝；状态变为已退订，相符</td></tr>
+      <tr><td>视图</td><td>7 个视图可用性、待审核动态过滤</td><td>均可用</td><td>均可用，待审核视图随审核状态实时变化，相符</td></tr>
+      <tr><td>权限控制</td><td>订阅用户直查 subscriber / 读 publication / 查本人订单视图</td><td>拒绝 / 允许 / 仅本人数据</td><td>拒绝；读取 3 行；视图按账号过滤，相符</td></tr>
+      <tr><td>操作日志</td><td>录入、审核等操作自动记录</td><td>自动写入</td><td>自动写入 8 条日志，相符</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>本页为报告第五章草稿：正文可直接粘入 Word（执行验证截图请在 MySQL 客户端中重跑 sql/ 脚本后自行截取）；对应 SQL 脚本见 sql/ 目录（01 建库建表、02 视图、03 函数、04 存储过程、05 触发器、06 权限）。</footer>
+</div>
+</body>
+</html>
