@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>报刊订阅管理系统 — 需求分析</title>
+<style>
+body{background:#f2f4f7;font-family:'SimSun','宋体',serif;color:#222;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 50px}
+header.top{background:#1F3A5F;color:#fff;border-radius:10px;padding:22px 28px;margin-bottom:20px}
+header.top h1{font-family:'Microsoft YaHei',sans-serif;font-size:24px;margin:0 0 8px}
+header.top p{margin:0;color:#C9D6EA;font-size:14px;font-family:'Microsoft YaHei',sans-serif;line-height:1.6}
+.card{background:#fff;border:1px solid #DFE4EA;border-radius:10px;padding:24px 30px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+h2.sec{font-family:'Microsoft YaHei',sans-serif;font-size:20px;color:#1F3A5F;border-left:5px solid #2B6CB0;padding-left:12px;margin:4px 0 14px}
+h3{font-family:'Microsoft YaHei',sans-serif;font-size:16px;color:#2C3E50;margin:16px 0 8px}
+p.body{font-size:16px;line-height:1.75;text-indent:2em;margin:8px 0;text-align:justify}
+p.body b.g{color:#1F3A5F}
+figure{margin:14px auto 4px;text-align:center}
+figure svg{max-width:100%;height:auto;background:#fff}
+figcaption{font-size:14px;color:#333;font-family:'SimSun','宋体',serif;margin-top:8px;font-weight:600}
+.note{background:#F7F9FC;border:1px dashed #B9C6D8;border-radius:8px;padding:12px 16px;font-size:14px;font-family:'Microsoft YaHei',sans-serif;color:#445;line-height:1.7}
+table.tbl{border-collapse:collapse;width:100%;margin:10px 0 6px;font-size:14px;line-height:1.55}
+table.tbl th{border-top:2px solid #333;border-bottom:1.5px solid #333;padding:7px 8px;font-family:'Microsoft YaHei',sans-serif;font-size:13.5px;background:#F7F9FC}
+table.tbl td{border-bottom:1px solid #D8DEE6;padding:6px 8px;font-family:'SimSun','宋体',serif}
+table.tbl tbody tr:last-child td{border-bottom:2px solid #333}
+caption{caption-side:top;text-align:center;font-weight:600;font-size:14px;padding:6px 0;font-family:'SimSun','宋体',serif}
+footer{text-align:center;color:#889;font-size:13px;font-family:'Microsoft YaHei',sans-serif;margin-top:6px}
+@media print{body{background:#fff}.card{box-shadow:none;break-inside:avoid}figure{break-inside:avoid}}
+
+text{font-family:'Microsoft YaHei','PingFang SC','Noto Sans SC',sans-serif}
+.ext{fill:#F3F4F6;stroke:#4B5563;stroke-width:1.8}
+.ext-t{font-size:14.5px;font-weight:600;fill:#374151}
+.proc{fill:#EAF2FB;stroke:#2B6CB0;stroke-width:1.8}
+.proc-id{font-size:12px;font-weight:600;fill:#5B7BA8}
+.proc-t{font-size:14.5px;font-weight:600;fill:#173A5E}
+.store-line{stroke:#2F855A;stroke-width:1.8}
+.store-t{font-size:13.5px;font-weight:600;fill:#215C3B}
+.flow{stroke:#5A6472;stroke-width:1.6;fill:none}
+.flow-lab{font-size:12.5px;font-weight:600;fill:#1A365D;stroke:#FFFFFF;stroke-width:5px;paint-order:stroke;stroke-linejoin:round}
+.mod{fill:#EAF2FB;stroke:#2B6CB0;stroke-width:1.6}
+.mod-t{font-size:15px;font-weight:600;fill:#173A5E}
+.root{fill:#1F3A5F;stroke:#152C49;stroke-width:1.5}
+.root-t{font-size:16.5px;font-weight:700;fill:#FFFFFF}
+.sub{fill:#FFFFFF;stroke:#94A3B8;stroke-width:1.3}
+.sub-t{font-size:13px;fill:#334155}
+.tree{stroke:#5A6472;stroke-width:1.5;fill:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>报刊订阅管理系统 · 需求分析</h1>
+  <p>《数据库原理实践》课程设计报告 第二章（需求分析）初稿 ｜ 生成日期：2026-10-11 ｜ 模块划分与第三章 E-R 图保持一致</p>
+</header>
+
+<section class="card">
+  <h2 class="sec">2.1 功能需求与系统功能模块图</h2>
+  <p class="body">通过对某企业报刊订阅业务的调研与分析，报刊订阅管理系统面向<b class="g">系统管理员、部门管理员、订阅用户</b>三类角色，实现报刊订阅业务的全流程信息化管理。系统的功能需求如下：</p>
+  <p class="body">（1）<b class="g">录入功能</b>：系统管理员可录入部门信息、订阅人员信息、报刊类别与报刊基本信息，并为订阅人员分配登录账号与系统角色；（2）<b class="g">订阅功能</b>：订阅用户（或由部门管理员代订）选定报刊、份数与订阅期限后生成订阅单，系统按“单价×份数×订阅期数”自动计算订阅金额，订阅单提交后由系统管理员审核生效；（3）<b class="g">查询功能</b>：按人员、报刊、部门三个维度查询订阅信息，姓名与报刊名称支持模糊查询，查询结果可预览和打印；（4）<b class="g">统计功能</b>：按报刊、人员、部门统计订阅数量与订阅金额，统计结果可预览和打印；（5）<b class="g">系统维护</b>：包括订阅单审核、操作日志管理、数据备份与恢复、参数设置与权限管理等。</p>
+  <p class="body">据此将系统自顶向下划分为<b class="g">系统管理、部门与人员管理、报刊信息管理、订阅管理、查询统计、系统维护</b>六个功能模块，如图2-1 所示。其中系统管理模块负责身份验证与角色权限控制；部门与人员管理模块维护组织机构与人员档案并分配账号；报刊信息管理模块维护报刊类别与报刊基础数据；订阅管理模块是核心业务模块，完成订阅登记、金额计算与订阅单生成；查询统计模块提供三维度的查询、统计与打印输出；系统维护模块承担订阅单审核、日志管理与数据备份。该模块划分与第三章概念结构设计中的分 E-R 图划分保持一致。</p>
+  <figure>
+  <svg viewBox="0 0 1500 450" width="1500" height="450" xmlns="http://www.w3.org/2000/svg" role="img">
+<path class="tree" d="M750,69 V120 M140,120 H1340 M140,120 V146 M380,120 V146 M620,120 V146 M860,120 V146 M1100,120 V146 M1340,120 V146"/>
+<rect class="root" x="630" y="21" width="240" height="48" rx="4"/>
+<text class="root-t" x="750" y="45" dy=".35em" text-anchor="middle">报刊订阅管理系统</text>
+<rect class="mod" x="40" y="146" width="200" height="48" rx="4"/>
+<text class="mod-t" x="140" y="170" dy=".35em" text-anchor="middle">系统管理</text>
+<line class="tree" x1="140" y1="194" x2="140" y2="366"/>
+<rect class="sub" x="48" y="240" width="184" height="34" rx="3"/>
+<text class="sub-t" x="140" y="257" dy=".35em" text-anchor="middle">用户登录</text>
+<rect class="sub" x="48" y="286" width="184" height="34" rx="3"/>
+<text class="sub-t" x="140" y="303" dy=".35em" text-anchor="middle">修改密码</text>
+<rect class="sub" x="48" y="332" width="184" height="34" rx="3"/>
+<text class="sub-t" x="140" y="349" dy=".35em" text-anchor="middle">角色权限管理</text>
+<rect class="mod" x="280" y="146" width="200" height="48" rx="4"/>
+<text class="mod-t" x="380" y="170" dy=".35em" text-anchor="middle">部门与人员管理</text>
+<line class="tree" x1="380" y1="194" x2="380" y2="412"/>
+<rect class="sub" x="288" y="240" width="184" height="34" rx="3"/>
+<text class="sub-t" x="380" y="257" dy=".35em" text-anchor="middle">部门信息维护</text>
+<rect class="sub" x="288" y="286" width="184" height="34" rx="3"/>
+<text class="sub-t" x="380" y="303" dy=".35em" text-anchor="middle">人员信息维护</text>
+<rect class="sub" x="288" y="332" width="184" height="34" rx="3"/>
+<text class="sub-t" x="380" y="349" dy=".35em" text-anchor="middle">账号与角色分配</text>
+<rect class="sub" x="288" y="378" width="184" height="34" rx="3"/>
+<text class="sub-t" x="380" y="395" dy=".35em" text-anchor="middle">人员查询</text>
+<rect class="mod" x="520" y="146" width="200" height="48" rx="4"/>
+<text class="mod-t" x="620" y="170" dy=".35em" text-anchor="middle">报刊信息管理</text>
+<line class="tree" x1="620" y1="194" x2="620" y2="366"/>
+<rect class="sub" x="528" y="240" width="184" height="34" rx="3"/>
+<text class="sub-t" x="620" y="257" dy=".35em" text-anchor="middle">报刊类别维护</text>
+<rect class="sub" x="528" y="286" width="184" height="34" rx="3"/>
+<text class="sub-t" x="620" y="303" dy=".35em" text-anchor="middle">报刊信息维护</text>
+<rect class="sub" x="528" y="332" width="184" height="34" rx="3"/>
+<text class="sub-t" x="620" y="349" dy=".35em" text-anchor="middle">报刊查询</text>
+<rect class="mod" x="760" y="146" width="200" height="48" rx="4"/>
+<text class="mod-t" x="860" y="170" dy=".35em" text-anchor="middle">订阅管理</text>
+<line class="tree" x1="860" y1="194" x2="860" y2="412"/>
+<rect class="sub" x="768" y="240" width="184" height="34" rx="3"/>
+<text class="sub-t" x="860" y="257" dy=".35em" text-anchor="middle">订阅登记</text>
+<rect class="sub" x="768" y="286" width="184" height="34" rx="3"/>
+<text class="sub-t" x="860" y="303" dy=".35em" text-anchor="middle">金额计算</text>
+<rect class="sub" x="768" y="332" width="184" height="34" rx="3"/>
+<text class="sub-t" x="860" y="349" dy=".35em" text-anchor="middle">订阅单生成与提交</text>
+<rect class="sub" x="768" y="378" width="184" height="34" rx="3"/>
+<text class="sub-t" x="860" y="395" dy=".35em" text-anchor="middle">订阅单维护</text>
+<rect class="mod" x="1000" y="146" width="200" height="48" rx="4"/>
+<text class="mod-t" x="1100" y="170" dy=".35em" text-anchor="middle">查询统计</text>
+<line class="tree" x1="1100" y1="194" x2="1100" y2="366"/>
+<rect class="sub" x="1008" y="240" width="184" height="34" rx="3"/>
+<text class="sub-t" x="1100" y="257" dy=".35em" text-anchor="middle">订阅查询（模糊）</text>
+<rect class="sub" x="1008" y="286" width="184" height="34" rx="3"/>
+<text class="sub-t" x="1100" y="303" dy=".35em" text-anchor="middle">订阅统计（三维）</text>
+<rect class="sub" x="1008" y="332" width="184" height="34" rx="3"/>
+<text class="sub-t" x="1100" y="349" dy=".35em" text-anchor="middle">结果预览与打印</text>
+<rect class="mod" x="1240" y="146" width="200" height="48" rx="4"/>
+<text class="mod-t" x="1340" y="170" dy=".35em" text-anchor="middle">系统维护</text>
+<line class="tree" x1="1340" y1="194" x2="1340" y2="366"/>
+<rect class="sub" x="1248" y="240" width="184" height="34" rx="3"/>
+<text class="sub-t" x="1340" y="257" dy=".35em" text-anchor="middle">订阅单审核</text>
+<rect class="sub" x="1248" y="286" width="184" height="34" rx="3"/>
+<text class="sub-t" x="1340" y="303" dy=".35em" text-anchor="middle">操作日志管理</text>
+<rect class="sub" x="1248" y="332" width="184" height="34" rx="3"/>
+<text class="sub-t" x="1340" y="349" dy=".35em" text-anchor="middle">数据备份与恢复</text>
+</svg>
+  <figcaption>图2-1 系统功能模块图</figcaption>
+  </figure>
+</section>
+
+<section class="card">
+  <h2 class="sec">2.2 系统数据流图</h2>
+  <p class="body">数据流图采用自顶向下的方法绘制：先给出反映系统与外部实体关系的顶层图，再分解得到 0 层图，最后对核心加工 P4 给出 1 层图。图中方框表示外部实体，圆圈表示加工，双横线表示数据存储，带名称的箭头表示数据流。</p>
+  <h3>2.2.1 顶层数据流图</h3>
+  <figure>
+  <svg viewBox="0 0 920 520" width="920" height="520" xmlns="http://www.w3.org/2000/svg" role="img">
+<defs><marker id="arr-c" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5A6472"/></marker></defs>
+<line class="flow" x1="195.0" y1="143.3" x2="360.4" y2="213.8" marker-end="url(#arr-c)"/>
+<line class="flow" x1="360.4" y1="213.8" x2="195.0" y2="143.3" marker-end="url(#arr-c)"/>
+<line class="flow" x1="158.8" y1="376.0" x2="353.2" y2="298.8" marker-end="url(#arr-c)"/>
+<line class="flow" x1="353.2" y1="298.8" x2="158.8" y2="376.0" marker-end="url(#arr-c)"/>
+<line class="flow" x1="757.8" y1="144.0" x2="565.8" y2="228.3" marker-end="url(#arr-c)"/>
+<line class="flow" x1="565.8" y1="228.3" x2="757.8" y2="144.0" marker-end="url(#arr-c)"/>
+<rect class="ext" x="45" y="96" width="150" height="48" rx="2"/>
+<text class="ext-t" x="120" y="120" dy=".35em" text-anchor="middle">订阅人员</text>
+<rect class="ext" x="45" y="376" width="150" height="48" rx="2"/>
+<text class="ext-t" x="120" y="400" dy=".35em" text-anchor="middle">部门管理员</text>
+<rect class="ext" x="715" y="96" width="150" height="48" rx="2"/>
+<text class="ext-t" x="790" y="120" dy=".35em" text-anchor="middle">系统管理员</text>
+<circle class="proc" cx="460" cy="265" r="112"/>
+<text class="proc-id" x="460" y="251" text-anchor="middle">P0</text>
+<text class="proc-t" x="460" y="273" text-anchor="middle"><tspan x="460" dy="0">报刊订阅</tspan><tspan x="460" dy="1.25em">管理系统</tspan></text>
+<text class="flow-lab" x="259" y="157" text-anchor="middle"><tspan x="259" dy="0">订阅申请、</tspan><tspan x="259" dy="1.2em">查询统计请求</tspan></text>
+<text class="flow-lab" x="327" y="230" text-anchor="middle"><tspan x="327" dy="0">订阅单与金额、</tspan><tspan x="327" dy="1.2em">查询统计结果</tspan></text>
+<text class="flow-lab" x="253" y="325" text-anchor="middle"><tspan x="253" dy="0">代订申请、</tspan><tspan x="253" dy="1.2em">查询统计请求</tspan></text>
+<text class="flow-lab" x="246" y="367" text-anchor="middle"><tspan x="246" dy="0">代订结果、</tspan><tspan x="246" dy="1.2em">查询统计结果</tspan></text>
+<text class="flow-lab" x="655" y="175" text-anchor="middle"><tspan x="655" dy="0">基础信息、</tspan><tspan x="655" dy="1.2em">审核与维护指令</tspan></text>
+<text class="flow-lab" x="602" y="242" text-anchor="middle"><tspan x="602" dy="0">统计报表、审核待办、</tspan><tspan x="602" dy="1.2em">日志信息</tspan></text>
+</svg>
+  <figcaption>图2-2 顶层数据流图</figcaption>
+  </figure>
+  <p class="body">顶层图把整个系统抽象为一个加工 P0。系统与三类外部实体交换数据：订阅用户向系统提交订阅申请与查询统计请求，系统返回订阅单（含金额）与查询统计结果；部门管理员可代本部门人员办理订阅并进行查询统计；系统管理员负责录入部门、人员、报刊等基础数据，并对订阅单进行审核与系统维护。</p>
+  <h3>2.2.2 0 层数据流图</h3>
+  <figure>
+  <svg viewBox="0 0 1560 1080" width="1560" height="1080" xmlns="http://www.w3.org/2000/svg" role="img">
+<defs><marker id="arr-z" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5A6472"/></marker></defs>
+<line class="flow" x1="124.9" y1="356.0" x2="300.7" y2="187.6" marker-end="url(#arr-z)"/>
+<line class="flow" x1="310.4" y1="197.7" x2="145.2" y2="356.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="110.7" y1="836.0" x2="323.6" y2="206.1" marker-end="url(#arr-z)"/>
+<line class="flow" x1="336.9" y1="210.6" x2="125.5" y2="836.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="1384.0" y1="373.4" x2="408.9" y2="169.5" marker-end="url(#arr-z)"/>
+<line class="flow" x1="411.7" y1="155.8" x2="1384.0" y2="359.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="185.0" y1="373.0" x2="408.4" y2="373.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="408.4" y1="387.0" x2="185.0" y2="387.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="119.2" y1="836.0" x2="427.4" y2="425.1" marker-end="url(#arr-z)"/>
+<line class="flow" x1="438.6" y1="433.5" x2="136.8" y2="836.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="136.8" y1="404.0" x2="438.6" y2="806.5" marker-end="url(#arr-z)"/>
+<line class="flow" x1="427.4" y1="814.9" x2="119.2" y2="404.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="185.0" y1="853.0" x2="408.4" y2="853.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="408.4" y1="867.0" x2="185.0" y2="867.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="1384.0" y1="357.0" x2="1215.5" y2="275.7" marker-end="url(#arr-z)"/>
+<line class="flow" x1="1439.0" y1="404.0" x2="1209.9" y2="656.8" marker-end="url(#arr-z)"/>
+<line class="flow" x1="1384.0" y1="375.2" x2="890.6" y2="407.1" marker-end="url(#arr-z)"/>
+<line class="flow" x1="891.8" y1="425.0" x2="1384.0" y2="393.3" marker-end="url(#arr-z)"/>
+<line class="flow" x1="293.3" y1="175.0" x2="134.1" y2="245.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="1094.0" y1="241.2" x2="175.0" y2="258.6" marker-end="url(#arr-z)"/>
+<line class="flow" x1="1172.1" y1="304.9" x2="1297.2" y2="975.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="1095.9" y1="715.5" x2="891.9" y2="765.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="1094.0" y1="700.0" x2="545.0" y2="700.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="470.0" y1="442.0" x2="470.0" y2="685.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="524.2" y1="410.1" x2="803.0" y2="565.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="531.5" y1="371.8" x2="545.0" y2="370.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="830.0" y1="482.0" x2="830.0" y2="565.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="770.4" y1="403.0" x2="672.5" y2="375.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="470.0" y1="798.0" x2="470.0" y2="715.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="518.9" y1="821.9" x2="810.7" y2="595.0" marker-end="url(#arr-z)"/>
+<line class="flow" x1="531.3" y1="869.6" x2="1225.0" y2="978.3" marker-end="url(#arr-z)"/>
+<rect class="ext" x="35" y="356" width="150" height="48" rx="2"/>
+<text class="ext-t" x="110" y="380" dy=".35em" text-anchor="middle">订阅人员</text>
+<rect class="ext" x="35" y="836" width="150" height="48" rx="2"/>
+<text class="ext-t" x="110" y="860" dy=".35em" text-anchor="middle">部门管理员</text>
+<rect class="ext" x="1384" y="356" width="132" height="48" rx="2"/>
+<text class="ext-t" x="1450" y="380" dy=".35em" text-anchor="middle">系统管理员</text>
+<circle class="proc" cx="350" cy="150" r="62"/>
+<text class="proc-id" x="350" y="136" text-anchor="middle">P1</text>
+<text class="proc-t" x="350" y="158" dy=".35em" text-anchor="middle">系统管理</text>
+<circle class="proc" cx="470" cy="380" r="62"/>
+<text class="proc-id" x="470" y="366" text-anchor="middle">P4</text>
+<text class="proc-t" x="470" y="388" dy=".35em" text-anchor="middle">订阅管理</text>
+<circle class="proc" cx="470" cy="860" r="62"/>
+<text class="proc-id" x="470" y="846" text-anchor="middle">P5</text>
+<text class="proc-t" x="470" y="868" dy=".35em" text-anchor="middle">查询统计</text>
+<circle class="proc" cx="830" cy="420" r="62"/>
+<text class="proc-id" x="830" y="406" text-anchor="middle">P6</text>
+<text class="proc-t" x="830" y="428" dy=".35em" text-anchor="middle">系统维护</text>
+<circle class="proc" cx="1160" cy="240" r="66"/>
+<text class="proc-id" x="1160" y="226" text-anchor="middle">P2</text>
+<text class="proc-t" x="1160" y="248" dy=".35em" text-anchor="middle">部门与人员管理</text>
+<circle class="proc" cx="1160" cy="700" r="66"/>
+<text class="proc-id" x="1160" y="686" text-anchor="middle">P3</text>
+<text class="proc-t" x="1160" y="708" dy=".35em" text-anchor="middle">报刊信息管理</text>
+<line class="store-line" x1="25" y1="245" x2="175" y2="245"/>
+<line class="store-line" x1="25" y1="275" x2="175" y2="275"/>
+<text class="store-t" x="100" y="260" dy=".35em" text-anchor="middle">D2 订阅人员</text>
+<line class="store-line" x1="1225" y1="975" x2="1375" y2="975"/>
+<line class="store-line" x1="1225" y1="1005" x2="1375" y2="1005"/>
+<text class="store-t" x="1300" y="990" dy=".35em" text-anchor="middle">D1 部门</text>
+<line class="store-line" x1="545" y1="345" x2="695" y2="345"/>
+<line class="store-line" x1="545" y1="375" x2="695" y2="375"/>
+<text class="store-t" x="620" y="360" dy=".35em" text-anchor="middle">D6 操作日志</text>
+<line class="store-line" x1="734" y1="565" x2="926" y2="565"/>
+<line class="store-line" x1="734" y1="595" x2="926" y2="595"/>
+<text class="store-t" x="830" y="580" dy=".35em" text-anchor="middle">D5 订阅单（含明细）</text>
+<line class="store-line" x1="395" y1="685" x2="545" y2="685"/>
+<line class="store-line" x1="395" y1="715" x2="545" y2="715"/>
+<text class="store-t" x="470" y="700" dy=".35em" text-anchor="middle">D4 报刊</text>
+<line class="store-line" x1="755" y1="765" x2="905" y2="765"/>
+<line class="store-line" x1="755" y1="795" x2="905" y2="795"/>
+<text class="store-t" x="830" y="780" dy=".35em" text-anchor="middle">D3 报刊类别</text>
+<text class="flow-lab" x="168" y="299" text-anchor="middle">登录信息</text>
+<text class="flow-lab" x="322" y="239" text-anchor="middle">登录结果</text>
+<text class="flow-lab" x="222" y="623" text-anchor="middle">登录信息</text>
+<text class="flow-lab" x="250" y="397" text-anchor="middle">登录结果</text>
+<text class="flow-lab" x="1229" y="329" text-anchor="middle">登录信息</text>
+<text class="flow-lab" x="581" y="209" text-anchor="middle">登录结果</text>
+<text class="flow-lab" x="254" y="361" text-anchor="middle">订阅申请</text>
+<text class="flow-lab" x="332" y="405" text-anchor="middle">订阅单与金额</text>
+<text class="flow-lab" x="228" y="676" text-anchor="middle">代订申请</text>
+<text class="flow-lab" x="352" y="570" text-anchor="middle">代订结果</text>
+<text class="flow-lab" x="267" y="565" text-anchor="middle">查询统计请求</text>
+<text class="flow-lab" x="321" y="681" text-anchor="middle">查询统计结果</text>
+<text class="flow-lab" x="254" y="841" text-anchor="middle">查询统计请求</text>
+<text class="flow-lab" x="326" y="885" text-anchor="middle">查询统计结果</text>
+<text class="flow-lab" x="1325" y="316" text-anchor="middle">部门与人员信息</text>
+<text class="flow-lab" x="1346" y="501" text-anchor="middle">报刊与类别信息</text>
+<text class="flow-lab" x="1139" y="377" text-anchor="middle">审核与维护指令</text>
+<text class="flow-lab" x="1141" y="435" text-anchor="middle">审核结果与报告</text>
+<text class="flow-lab" x="225" y="195" text-anchor="middle">读取账号</text>
+<text class="flow-lab" x="715" y="238" text-anchor="middle">写入人员与账号</text>
+<text class="flow-lab" x="1267" y="572" text-anchor="middle">写入部门</text>
+<text class="flow-lab" x="995" y="730" text-anchor="middle">写入类别</text>
+<text class="flow-lab" x="662" y="716" text-anchor="middle">写入报刊</text>
+<text class="flow-lab" x="418" y="540" text-anchor="middle">读取单价</text>
+<text class="flow-lab" x="692" y="488" text-anchor="middle">写订阅单与明细</text>
+<text class="flow-lab" x="598" y="377" text-anchor="middle">写日志</text>
+<text class="flow-lab" x="906" y="500" text-anchor="middle">写审核状态</text>
+<text class="flow-lab" x="700" y="401" text-anchor="middle">写日志</text>
+<text class="flow-lab" x="418" y="780" text-anchor="middle">读取报刊</text>
+<text class="flow-lab" x="734" y="722" text-anchor="middle">读取订阅单</text>
+<text class="flow-lab" x="802" y="902" text-anchor="middle">读取部门</text>
+</svg>
+  <figcaption>图2-3 0 层数据流图</figcaption>
+  </figure>
+  <p class="body">将顶层图按功能分解为 P1 系统管理、P2 部门与人员管理、P3 报刊信息管理、P4 订阅管理、P5 查询统计、P6 系统维护六个加工，对应图2-1 中的六个功能模块。P4 订阅管理是核心加工：读取 D4 报刊中的单价，将生成的订阅单及明细写入 D5，并写操作日志；P6 系统维护读取待审核订阅单、将审核状态写回 D5；P5 查询统计为只读加工，从 D1、D4、D5 等存储读取数据。为保持图面清晰，各加工写入 D6 操作日志的流程仅画出 P4、P6 两条，其余加工写日志从略；P5 对 D2、D3 的读取也从略。除 P4、P6 外，父图与子图的输入输出数据流保持平衡。</p>
+  <h3>2.2.3 订阅管理加工的 1 层数据流图</h3>
+  <figure>
+  <svg viewBox="0 0 1400 720" width="1400" height="720" xmlns="http://www.w3.org/2000/svg" role="img">
+<defs><marker id="arr-o" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7.5" markerHeight="7.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5A6472"/></marker></defs>
+<line class="flow" x1="175.0" y1="360.0" x2="288.0" y2="360.0" marker-end="url(#arr-o)"/>
+<line class="flow" x1="412.0" y1="360.0" x2="558.0" y2="360.0" marker-end="url(#arr-o)"/>
+<line class="flow" x1="620.0" y1="145.0" x2="620.0" y2="298.0" marker-end="url(#arr-o)"/>
+<line class="flow" x1="682.0" y1="360.0" x2="828.0" y2="360.0" marker-end="url(#arr-o)"/>
+<line class="flow" x1="952.0" y1="360.0" x2="1098.0" y2="360.0" marker-end="url(#arr-o)"/>
+<line class="flow" x1="1160.0" y1="422.0" x2="1160.0" y2="585.0" marker-end="url(#arr-o)"/>
+<line class="flow" x1="1112.8" y1="319.8" x2="907.6" y2="145.0" marker-end="url(#arr-o)"/>
+<polyline class="flow" points="1222.0,360.0 1310.0,360.0 1310.0,680.0 100.0,680.0 100.0,384.0" marker-end="url(#arr-o)"/>
+<rect class="ext" x="25" y="336" width="150" height="48" rx="2"/>
+<text class="ext-t" x="100" y="360" text-anchor="middle"><tspan x="100" dy="0">订阅人员 /</tspan><tspan x="100" dy="1.25em">部门管理员</tspan></text>
+<circle class="proc" cx="350" cy="360" r="62"/>
+<text class="proc-id" x="350" y="346" text-anchor="middle">P4.1</text>
+<text class="proc-t" x="350" y="368" dy=".35em" text-anchor="middle">接收订阅申请</text>
+<circle class="proc" cx="620" cy="360" r="62"/>
+<text class="proc-id" x="620" y="346" text-anchor="middle">P4.2</text>
+<text class="proc-t" x="620" y="368" dy=".35em" text-anchor="middle">检索单价</text>
+<circle class="proc" cx="890" cy="360" r="62"/>
+<text class="proc-id" x="890" y="346" text-anchor="middle">P4.3</text>
+<text class="proc-t" x="890" y="368" dy=".35em" text-anchor="middle">计算金额</text>
+<circle class="proc" cx="1160" cy="360" r="62"/>
+<text class="proc-id" x="1160" y="346" text-anchor="middle">P4.4</text>
+<text class="proc-t" x="1160" y="368" dy=".35em" text-anchor="middle">生成订阅单</text>
+<line class="store-line" x1="545" y1="115" x2="695" y2="115"/>
+<line class="store-line" x1="545" y1="145" x2="695" y2="145"/>
+<text class="store-t" x="620" y="130" dy=".35em" text-anchor="middle">D4 报刊</text>
+<line class="store-line" x1="815" y1="115" x2="965" y2="115"/>
+<line class="store-line" x1="815" y1="145" x2="965" y2="145"/>
+<text class="store-t" x="890" y="130" dy=".35em" text-anchor="middle">D6 操作日志</text>
+<line class="store-line" x1="1064" y1="585" x2="1256" y2="585"/>
+<line class="store-line" x1="1064" y1="615" x2="1256" y2="615"/>
+<text class="store-t" x="1160" y="600" dy=".35em" text-anchor="middle">D5 订阅单（含明细）</text>
+<text class="flow-lab" x="225" y="348" text-anchor="middle">订阅申请</text>
+<text class="flow-lab" x="485" y="348" text-anchor="middle">有效订阅项</text>
+<text class="flow-lab" x="654" y="245" text-anchor="middle">单价</text>
+<text class="flow-lab" x="755" y="348" text-anchor="middle">单价与订阅项</text>
+<text class="flow-lab" x="1025" y="348" text-anchor="middle">应收金额</text>
+<text class="flow-lab" x="1256" y="480" text-anchor="middle">写订阅单与明细</text>
+<text class="flow-lab" x="1052" y="256" text-anchor="middle">写日志</text>
+<text class="flow-lab" x="665" y="666" text-anchor="middle">订阅单确认（含总金额）</text>
+</svg>
+  <figcaption>图2-4 订阅管理加工的 1 层数据流图</figcaption>
+  </figure>
+  <p class="body">对核心加工 P4 进一步分解为四个子加工：P4.1 接收订阅申请并校验有效性，P4.2 从 D4 检索单价，P4.3 按“单价×份数×订阅期数”计算小计金额并汇总总金额，P4.4 生成订阅单与订阅明细写入 D5 并记录日志，最后向用户返回订阅单确认。部门管理员代订走同一流程，仅申请人字段不同。1 层图与父图 P4 的输入输出数据流一致，满足父子图平衡。</p>
+</section>
+
+<section class="card">
+  <h2 class="sec">2.3 数据字典</h2>
+  <p class="body">数据字典对数据流图中出现的数据项、数据结构、数据流、数据存储和处理过程进行定义与说明，与图2-2—图2-4 配合共同构成需求分析的完整文档。限于篇幅，数据项表列出系统中的主要数据项，其余从略。</p>
+  <h3>2.3.1 数据项</h3>
+  <table class="tbl"><thead><tr><th>数据项名称</th><th>含义说明</th><th>类型</th><th>长度</th><th>取值范围</th><th>备注</th></tr></thead><tbody><tr><td>人员编号</td><td>订阅人员的唯一标识</td><td>字符</td><td>8</td><td>唯一、非空</td><td>主码</td></tr><tr><td>姓名</td><td>订阅人员姓名</td><td>字符</td><td>20</td><td>非空</td><td>支持模糊查询</td></tr><tr><td>性别</td><td>订阅人员性别</td><td>字符</td><td>2</td><td>{男，女}</td><td></td></tr><tr><td>联系电话</td><td>订阅人员联系电话</td><td>字符</td><td>11</td><td>11 位数字</td><td></td></tr><tr><td>通信地址</td><td>订阅人员通信地址</td><td>字符</td><td>50</td><td>—</td><td></td></tr><tr><td>用户名</td><td>登录账号名</td><td>字符</td><td>20</td><td>唯一、非空</td><td>候选码</td></tr><tr><td>密码</td><td>登录口令（加密存储）</td><td>字符</td><td>64</td><td>非空</td><td></td></tr><tr><td>角色</td><td>系统角色</td><td>字符</td><td>10</td><td>{系统管理员，部门管理员，订阅用户}</td><td>非空</td></tr><tr><td>部门编号</td><td>部门唯一标识</td><td>字符</td><td>6</td><td>唯一、非空</td><td>主码</td></tr><tr><td>部门名称</td><td>部门名称</td><td>字符</td><td>30</td><td>非空</td><td></td></tr><tr><td>办公地点</td><td>部门办公地点</td><td>字符</td><td>30</td><td>—</td><td></td></tr><tr><td>类别编号</td><td>报刊类别唯一标识</td><td>字符</td><td>4</td><td>唯一、非空</td><td>主码</td></tr><tr><td>类别名称</td><td>报刊类别名称</td><td>字符</td><td>20</td><td>非空</td><td></td></tr><tr><td>类别说明</td><td>类别补充说明</td><td>字符</td><td>50</td><td>—</td><td></td></tr><tr><td>报刊编号</td><td>报刊唯一标识</td><td>字符</td><td>8</td><td>唯一、非空</td><td>主码</td></tr><tr><td>报刊名称</td><td>报刊名称</td><td>字符</td><td>40</td><td>非空</td><td>支持模糊查询</td></tr><tr><td>刊期</td><td>出版周期</td><td>字符</td><td>6</td><td>{日报，周报，半月刊，月刊，双月刊}</td><td></td></tr><tr><td>单价</td><td>报刊每期价格</td><td>数值</td><td>—</td><td>大于 0</td><td>用于金额计算</td></tr><tr><td>出版社</td><td>报刊出版社</td><td>字符</td><td>30</td><td>—</td><td></td></tr><tr><td>订单编号</td><td>订阅单唯一标识</td><td>字符</td><td>10</td><td>唯一、非空</td><td>主码</td></tr><tr><td>订阅日期</td><td>订阅单生成日期</td><td>日期</td><td>—</td><td>不晚于当前日期</td><td></td></tr><tr><td>起订日期</td><td>订阅开始日期</td><td>日期</td><td>—</td><td>不早于订阅日期</td><td></td></tr><tr><td>截止日期</td><td>订阅结束日期</td><td>日期</td><td>—</td><td>晚于起订日期</td><td></td></tr><tr><td>份数</td><td>某报刊的订阅份数</td><td>整数</td><td>—</td><td>1~999</td><td>包含联系的属性</td></tr><tr><td>订阅期数</td><td>按刊期折算的订阅期数</td><td>整数</td><td>—</td><td>≥1</td><td>用于金额计算</td></tr><tr><td>小计金额</td><td>单种报刊订阅金额</td><td>数值</td><td>—</td><td>≥0</td><td>=单价×份数×订阅期数</td></tr><tr><td>总金额</td><td>订阅单总金额</td><td>数值</td><td>—</td><td>≥0</td><td>=各小计金额之和</td></tr><tr><td>订单状态</td><td>订阅单当前状态</td><td>字符</td><td>8</td><td>{待审核，已通过，已驳回，已退订}</td><td></td></tr><tr><td>审核时间</td><td>订阅单审核时间</td><td>日期时间</td><td>—</td><td>不早于订阅日期</td><td>审核联系的属性</td></tr><tr><td>审核意见</td><td>审核意见</td><td>字符</td><td>100</td><td>—</td><td>审核联系的属性</td></tr><tr><td>日志编号</td><td>操作日志唯一标识</td><td>整数</td><td>—</td><td>唯一、自增</td><td>主码</td></tr><tr><td>操作类型</td><td>操作类别</td><td>字符</td><td>10</td><td>{登录，录入，修改，删除，订阅，审核，备份}</td><td></td></tr><tr><td>操作内容</td><td>操作的具体内容</td><td>字符</td><td>200</td><td>—</td><td></td></tr><tr><td>操作时间</td><td>操作发生时间</td><td>日期时间</td><td>—</td><td>—</td><td></td></tr></tbody></table>
+  <h3>2.3.2 数据结构</h3>
+  <table class="tbl"><thead><tr><th>名称</th><th>组成</th></tr></thead><tbody><tr><td>部门</td><td>部门编号 + 部门名称 + 办公地点 + 联系电话</td></tr><tr><td>订阅人员</td><td>人员编号 + 姓名 + 性别 + 联系电话 + 通信地址 + 所属部门 + 用户名 + 密码 + 角色</td></tr><tr><td>报刊类别</td><td>类别编号 + 类别名称 + 类别说明</td></tr><tr><td>报刊</td><td>报刊编号 + 报刊名称 + 所属类别 + 刊期 + 单价 + 出版社</td></tr><tr><td>订阅单</td><td>订单编号 + 订阅日期 + 起订日期 + 截止日期 + 总金额 + 订单状态 + 下单人 + 审核人 + 审核时间 + 审核意见</td></tr><tr><td>订阅明细</td><td>订单编号 + 报刊编号 + 份数 + 订阅期数 + 小计金额</td></tr><tr><td>操作日志</td><td>日志编号 + 操作人员 + 操作类型 + 操作内容 + 操作时间</td></tr><tr><td>查询请求</td><td>查询维度{人员|报刊|部门} + 查询条件（含模糊匹配串）</td></tr><tr><td>统计请求</td><td>统计维度{报刊|人员|部门} + 统计时间段</td></tr><tr><td>统计报表</td><td>统计维度 + 统计周期 + 汇总数据（订阅数量、金额合计）</td></tr></tbody></table>
+  <h3>2.3.3 数据流</h3>
+  <table class="tbl"><thead><tr><th>数据流名称</th><th>来源</th><th>去向</th><th>组成</th></tr></thead><tbody><tr><td>登录信息</td><td>订阅人员 / 部门管理员 / 系统管理员</td><td>P1 系统管理</td><td>用户名 + 密码</td></tr><tr><td>登录结果</td><td>P1 系统管理</td><td>相应外部实体</td><td>验证结果 + 角色</td></tr><tr><td>订阅申请</td><td>订阅人员 / 部门管理员</td><td>P4 订阅管理</td><td>人员 + {报刊 + 份数 + 订阅期数} + 起订日期</td></tr><tr><td>订阅单与金额</td><td>P4 订阅管理</td><td>订阅人员 / 部门管理员</td><td>订单编号 + 总金额 + 订单状态</td></tr><tr><td>代订申请</td><td>部门管理员</td><td>P4 订阅管理</td><td>部门 + {人员 + 报刊 + 份数 + 订阅期数}</td></tr><tr><td>代订结果</td><td>P4 订阅管理</td><td>部门管理员</td><td>订单编号 + 总金额 + 订单状态</td></tr><tr><td>查询统计请求</td><td>订阅人员 / 部门管理员</td><td>P5 查询统计</td><td>查询/统计维度 + 条件</td></tr><tr><td>查询统计结果</td><td>P5 查询统计</td><td>订阅人员 / 部门管理员</td><td>记录集合或汇总数据（可预览、打印）</td></tr><tr><td>部门与人员信息</td><td>系统管理员</td><td>P2 部门与人员管理</td><td>部门结构 + 订阅人员结构</td></tr><tr><td>报刊与类别信息</td><td>系统管理员</td><td>P3 报刊信息管理</td><td>报刊类别结构 + 报刊结构</td></tr><tr><td>审核与维护指令</td><td>系统管理员</td><td>P6 系统维护</td><td>订单编号 + 审核意见 / 维护指令</td></tr><tr><td>审核结果与报告</td><td>P6 系统维护</td><td>系统管理员</td><td>审核结果 + 日志信息 + 备份结果</td></tr><tr><td>有效订阅项</td><td>P4.1 接收订阅申请</td><td>P4.2 检索单价</td><td>人员 + 报刊 + 份数 + 订阅期数 + 起订日期</td></tr><tr><td>单价</td><td>D4 报刊</td><td>P4.2 检索单价</td><td>报刊编号 + 单价</td></tr><tr><td>单价与订阅项</td><td>P4.2 检索单价</td><td>P4.3 计算金额</td><td>订阅项 + 单价</td></tr><tr><td>应收金额</td><td>P4.3 计算金额</td><td>P4.4 生成订阅单</td><td>{小计金额} + 总金额</td></tr><tr><td>订阅单与明细</td><td>P4.4 生成订阅单</td><td>D5 订阅单（含明细）</td><td>订阅单结构 + 订阅明细结构</td></tr></tbody></table>
+  <h3>2.3.4 数据存储</h3>
+  <table class="tbl"><thead><tr><th>编号</th><th>名称</th><th>说明</th><th>输入加工</th><th>输出加工</th></tr></thead><tbody><tr><td>D1</td><td>部门表</td><td>部门基础信息</td><td>P2</td><td>P5</td></tr><tr><td>D2</td><td>订阅人员表</td><td>订阅人员及其登录账号信息</td><td>P2</td><td>P1、P5</td></tr><tr><td>D3</td><td>报刊类别表</td><td>报刊分类信息</td><td>P3</td><td>P5</td></tr><tr><td>D4</td><td>报刊表</td><td>报刊基础信息及单价</td><td>P3</td><td>P4、P5</td></tr><tr><td>D5</td><td>订阅单表（含订阅明细）</td><td>订阅单及其明细数据</td><td>P4、P6</td><td>P5、P6</td></tr><tr><td>D6</td><td>操作日志表</td><td>用户关键操作记录</td><td>P1—P6</td><td>P6</td></tr></tbody></table>
+  <h3>2.3.5 处理过程</h3>
+  <table class="tbl"><thead><tr><th>编号</th><th>名称</th><th>加工逻辑</th><th>主要输入</th><th>主要输出</th></tr></thead><tbody><tr><td>P1</td><td>系统管理</td><td>验证登录用户身份并按角色返回权限；提供密码修改入口。</td><td>登录信息</td><td>登录结果</td></tr><tr><td>P2</td><td>部门与人员管理</td><td>对部门与订阅人员信息进行录入、修改、删除，并分配账号与角色。</td><td>部门与人员信息</td><td>写入 D1、D2</td></tr><tr><td>P3</td><td>报刊信息管理</td><td>对报刊类别与报刊信息进行录入、修改、删除，支持模糊查询。</td><td>报刊与类别信息</td><td>写入 D3、D4</td></tr><tr><td>P4</td><td>订阅管理</td><td>接收订阅（或代订）申请，检索单价并计算金额，生成订阅单与明细，返回确认。</td><td>订阅申请 / 代订申请</td><td>订阅单与金额</td></tr><tr><td>P5</td><td>查询统计</td><td>按人员、报刊、部门维度查询订阅信息与统计汇总，支持模糊查询，结果可预览打印。</td><td>查询统计请求</td><td>查询统计结果</td></tr><tr><td>P6</td><td>系统维护</td><td>审核订阅单，管理操作日志，执行数据备份与恢复及参数设置。</td><td>审核与维护指令</td><td>审核结果与报告</td></tr><tr><td>P4.1</td><td>接收订阅申请</td><td>校验订阅人与报刊的有效性，形成有效订阅项。</td><td>订阅申请</td><td>有效订阅项</td></tr><tr><td>P4.2</td><td>检索单价</td><td>根据报刊编号从报刊表中检索单价。</td><td>有效订阅项</td><td>单价与订阅项</td></tr><tr><td>P4.3</td><td>计算金额</td><td>按 小计=单价×份数×订阅期数 计算每种报刊小计，并汇总总金额。</td><td>单价与订阅项</td><td>应收金额</td></tr><tr><td>P4.4</td><td>生成订阅单</td><td>生成订单编号，写入订阅单与订阅明细，记录操作日志，返回订阅单确认。</td><td>应收金额</td><td>订阅单确认 / 写 D5、D6</td></tr></tbody></table>
+</section>
+
+<footer>本页为报告第二章草稿：正文可直接粘入 Word（按报告格式调整字体）；插图可直接使用 docs/dfd-images/ 下导出的 PNG。</footer>
+</div>
+</body>
+</html>
