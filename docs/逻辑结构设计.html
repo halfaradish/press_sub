@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>报刊订阅管理系统 — 逻辑结构设计</title>
+<style>
+body{background:#f2f4f7;font-family:'SimSun','宋体',serif;color:#222;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 50px}
+header.top{background:#1F3A5F;color:#fff;border-radius:10px;padding:22px 28px;margin-bottom:20px}
+header.top h1{font-family:'Microsoft YaHei',sans-serif;font-size:24px;margin:0 0 8px}
+header.top p{margin:0;color:#C9D6EA;font-size:14px;font-family:'Microsoft YaHei',sans-serif;line-height:1.6}
+.card{background:#fff;border:1px solid #DFE4EA;border-radius:10px;padding:24px 30px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+h2.sec{font-family:'Microsoft YaHei',sans-serif;font-size:20px;color:#1F3A5F;border-left:5px solid #2B6CB0;padding-left:12px;margin:4px 0 14px}
+h3{font-family:'Microsoft YaHei',sans-serif;font-size:16px;color:#2C3E50;margin:16px 0 8px}
+h4{font-family:'Microsoft YaHei',sans-serif;font-size:14.5px;color:#2C3E50;margin:14px 0 6px}
+p.body{font-size:16px;line-height:1.75;text-indent:2em;margin:8px 0;text-align:justify}
+.note{background:#F7F9FC;border:1px dashed #B9C6D8;border-radius:8px;padding:12px 16px;font-size:14px;font-family:'Microsoft YaHei',sans-serif;color:#445;line-height:1.7}
+table.tbl{border-collapse:collapse;width:100%;margin:10px 0 6px;font-size:14px;line-height:1.55}
+table.tbl th{border-top:2px solid #333;border-bottom:1.5px solid #333;padding:7px 8px;font-family:'Microsoft YaHei',sans-serif;font-size:13.5px;background:#F7F9FC}
+table.tbl td{border-bottom:1px solid #D8DEE6;padding:6px 8px;font-family:'SimSun','宋体',serif;vertical-align:top}
+table.tbl tbody tr:last-child td{border-bottom:2px solid #333}
+.schema{font-family:'Microsoft YaHei',sans-serif;font-size:14.5px;line-height:2.0;background:#F8FAFD;border:1px solid #E2E8F0;border-radius:8px;padding:12px 18px;margin:10px 0}
+.schema u{font-weight:700;text-underline-offset:3px}
+.schema .fk{border-bottom:1.5px dashed #C0392B;text-decoration:none}
+.schema .cm{color:#8896AB;font-size:12.5px}
+.code{background:#0F2239;color:#D8E4F3;border-radius:8px;padding:14px 18px;font-family:Consolas,'Courier New',monospace;font-size:12.8px;line-height:1.55;overflow-x:auto;white-space:pre;text-align:left;margin:10px 0}
+.code .cm2{color:#6E8BB0}
+legend-hint{display:block}
+figcaption,.cap{font-size:14px;color:#333;text-align:center;margin-top:8px;font-weight:600}
+@media print{body{background:#fff}.card{box-shadow:none;break-inside:avoid}.code{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <h1>报刊订阅管理系统 · 逻辑结构设计</h1>
+  <p>《数据库原理实践》课程设计报告 第四章（逻辑结构设计）初稿 ｜ 生成日期：2026-10-12 ｜ 对应 SQL 脚本：sql/01、sql/02</p>
+</header>
+
+<section class="card">
+  <h2 class="sec">4.1 转换为关系数据模型</h2>
+  <p class="body">按照 E-R 图向关系模型转换的规则：①每一个实体转换为一个关系模式，实体的属性即关系的属性，实体的码即关系的码；②对于 1:n 的联系，将"1"端的主码并入"n"端关系作为外码，联系自身的属性一并并入；③对于 m:n 的联系，需单独转换为一个关系模式，其码为两端实体码的组合，联系的属性作为该关系的非主属性。据此，将图3-5 所示的系统总体 E-R 图转换为如下 7 个关系模式（<u>实下划线</u>表示主码，<span style="border-bottom:1.5px dashed #C0392B">虚下划线</span>表示外码）：</p>
+  <div class="schema">
+    部门（<u>部门编号</u>，部门名称，办公地点，联系电话）<br>
+    订阅人员（<u>人员编号</u>，姓名，性别，联系电话，通信地址，<span class="fk">所属部门</span>，用户名，口令，角色）<br>
+    报刊类别（<u>类别编号</u>，类别名称，类别说明）<br>
+    报刊（<u>报刊编号</u>，报刊名称，<span class="fk">所属类别</span>，刊期，单价，出版社，<span class="fk">维护人</span>）<br>
+    订阅单（<u>订单编号</u>，订阅日期，起订日期，截止日期，总金额，订单状态，<span class="fk">下单人</span>，<span class="fk">审核人</span>，审核时间，审核意见）<br>
+    订阅明细（<u>订单编号</u>，<u>报刊编号</u>，份数，订阅期数，小计金额）<br>
+    操作日志（<u>日志编号</u>，<span class="fk">操作人员</span>，操作类型，操作内容，操作时间）
+  </div>
+  <p class="body">各联系的具体转换策略如表4-1 所示。其中"包含"联系为 m:n 联系，转换为独立的关系模式"订阅明细"；其余 6 个 1:n 联系均按规则并入"n"端关系。此外，"审核"联系除审核人外还带有审核时间、审核意见两个属性，一并并入订阅单关系。</p>
+  <table class="tbl">
+    <caption style="caption-side:top;text-align:center;font-weight:600;font-size:14px;padding:6px 0">表4-1 联系类型与转换结果对照表</caption>
+    <thead><tr><th>联系</th><th>参与实体</th><th>联系类型</th><th>转换策略</th></tr></thead>
+    <tbody>
+      <tr><td>隶属</td><td>部门 — 订阅人员</td><td>1:n</td><td>"部门编号"并入订阅人员，作为外码"所属部门"</td></tr>
+      <tr><td>属于</td><td>报刊类别 — 报刊</td><td>1:n</td><td>"类别编号"并入报刊，作为外码"所属类别"</td></tr>
+      <tr><td>维护</td><td>订阅人员 — 报刊</td><td>1:n</td><td>"人员编号"并入报刊，作为外码"维护人"</td></tr>
+      <tr><td>提交</td><td>订阅人员 — 订阅单</td><td>1:n</td><td>"人员编号"并入订阅单，作为外码"下单人"</td></tr>
+      <tr><td>审核</td><td>订阅人员 — 订阅单</td><td>1:n</td><td>"人员编号"及联系属性"审核时间、审核意见"并入订阅单，作为"审核人"等</td></tr>
+      <tr><td>包含</td><td>订阅单 — 报刊</td><td>m:n</td><td>独立转换为"订阅明细"关系，码为（订单编号，报刊编号），联系属性"份数、订阅期数、小计金额"为其非主属性</td></tr>
+      <tr><td>记录</td><td>订阅人员 — 操作日志</td><td>1:n</td><td>"人员编号"并入操作日志，作为外码"操作人员"</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="card">
+  <h2 class="sec">4.2 关系模式的优化</h2>
+  <h3>4.2.1 函数依赖集与范式判定</h3>
+  <p class="body">对 4.1 节得到的各关系模式逐一写出函数依赖集，并依据函数依赖判定其达到的范式。判定结果汇总如表4-2 所示。</p>
+  <table class="tbl">
+    <caption style="caption-side:top;text-align:center;font-weight:600;font-size:14px;padding:6px 0">表4-2 各关系模式的函数依赖集与范式判定</caption>
+    <thead><tr><th style="width:11%">关系模式</th><th>函数依赖集 F</th><th style="width:20%">候选码</th><th style="width:9%">范式</th></tr></thead>
+    <tbody>
+      <tr><td>部门</td><td>部门编号 → （部门名称，办公地点，联系电话）</td><td>部门编号</td><td>BCNF</td></tr>
+      <tr><td>订阅人员</td><td>人员编号 → （姓名，性别，联系电话，通信地址，所属部门，用户名，口令，角色）；<br>用户名 → （人员编号，姓名，…，角色）</td><td>人员编号；<br>用户名</td><td>BCNF</td></tr>
+      <tr><td>报刊类别</td><td>类别编号 → （类别名称，类别说明）；<br>类别名称 → 类别编号</td><td>类别编号；<br>类别名称</td><td>BCNF</td></tr>
+      <tr><td>报刊</td><td>报刊编号 → （报刊名称，所属类别，刊期，单价，出版社，维护人）</td><td>报刊编号</td><td>BCNF</td></tr>
+      <tr><td>订阅单</td><td>订单编号 → （订阅日期，起订日期，截止日期，总金额，订单状态，下单人，审核人，审核时间，审核意见）</td><td>订单编号</td><td>BCNF</td></tr>
+      <tr><td>订阅明细</td><td>（订单编号，报刊编号） → （份数，订阅期数，小计金额）</td><td>（订单编号，报刊编号）</td><td>BCNF</td></tr>
+      <tr><td>操作日志</td><td>日志编号 → （操作人员，操作类型，操作内容，操作时间）</td><td>日志编号</td><td>BCNF</td></tr>
+    </tbody>
+  </table>
+  <p class="body">以订阅明细关系为例作典型分析：其主码为组合码（订单编号，报刊编号），非主属性份数、订阅期数、小计金额均完全函数依赖于整个主码，既不存在非主属性对码的部分依赖，也不存在非主属性之间的传递依赖（小计金额直接依赖于码，报刊单价并不在该关系中存储）；因此该关系达到 BCNF。订阅人员关系存在两个候选码（人员编号、用户名），所有非平凡函数依赖的决定因素（人员编号、用户名）均为候选码，满足 BCNF 的定义"每个非平凡依赖的决定因素必包含码"。</p>
+  <h3>4.2.2 优化过程</h3>
+  <p class="body">在 E-R 图向关系模型转换及规范化过程中，主要进行了以下三项优化：</p>
+  <p class="body">（1）合并 1:1 联系。初步设计时曾将"登录账号"（用户名、口令）作为独立实体与订阅人员建立 1:1 联系。由于账号与人员一一对应，拆开将导致每次登录验证都需要额外的连接操作，故按合并原则将账号属性并入订阅人员关系，"用户名"作为该关系的第二个候选码。</p>
+  <p class="body">（2）m:n 联系独立成关系。订阅单与报刊之间的"包含"联系为 m:n，若直接在订阅单中存放多种报刊将违反第一范式，故独立转换为订阅明细关系，并以（订单编号，报刊编号）为组合码。</p>
+  <p class="body">（3）消除传递依赖。初步设计中报刊关系曾冗余存储"类别名称"，存在传递依赖：报刊编号 → 类别编号 → 类别名称，类别更名时需修改所有该类报刊记录，产生更新异常。优化后仅保留外码"所属类别"，类别名称由报刊类别关系提供。同理，订阅单中只保存下单人编号而不冗余其部门信息。</p>
+  <p class="body">需要说明的是，订阅明细中的小计金额与订阅单中的总金额属于派生属性（小计 = 单价 × 份数 × 订阅期数，总金额 = 各小计之和），理论上可由连接查询随时导出；工程上保留它们是为了报表统计性能与对账快照的需要，其一致性由数据库触发器自动维护（见 5.3.4 节），不影响范式判定。</p>
+</section>
+
+<section class="card">
+  <h2 class="sec">4.3 视图设计</h2>
+  <p class="body">按照系统的访问控制需求和数据访问特点设计视图：查询模块的高频多表连接定义为视图以简化操作（简单性）；对敏感字段的屏蔽与"只看本人数据"的限制通过视图实现（安全性）；视图隔离了基本表结构变化对应用的影响（逻辑数据独立性）。共设计 7 个视图，一览如表4-3 所示，定义 SQL 如后。</p>
+  <table class="tbl">
+    <caption style="caption-side:top;text-align:center;font-weight:600;font-size:14px;padding:6px 0">表4-3 视图设计一览表</caption>
+    <thead><tr><th style="width:17%">视图名称</th><th>对应需求</th><th style="width:14%">主要作用</th></tr></thead>
+    <tbody>
+      <tr><td>v_user_brief</td><td>查询模块展示人员公开信息</td><td>安全性：屏蔽用户名、口令</td></tr>
+      <tr><td>v_order_detail</td><td>按人员/报刊/部门查询订阅信息</td><td>简单性：封装 5 表连接</td></tr>
+      <tr><td>v_pending_orders</td><td>管理员审核工作台</td><td>安全性：仅暴露待审核数据</td></tr>
+      <tr><td>v_person_stat</td><td>按人员统计订阅量与金额</td><td>简单性：封装分组统计</td></tr>
+      <tr><td>v_dept_stat</td><td>按部门统计订阅量与金额</td><td>简单性：封装分组统计</td></tr>
+      <tr><td>v_pub_stat</td><td>按报刊统计订阅量与金额</td><td>简单性：封装分组统计</td></tr>
+      <tr><td>v_user_orders</td><td>订阅用户查看本人订单</td><td>安全性：按登录账号的行级过滤</td></tr>
+    </tbody>
+  </table>
+  <div class="code"><span class="cm2">-- 视图1：订阅人员公开信息（屏蔽用户名与口令）</span>
+CREATE OR REPLACE VIEW v_user_brief AS
+SELECT s.sub_id, s.sub_name, s.gender, s.phone, s.address,
+       d.dept_name, s.role
+FROM subscriber s
+JOIN department d ON d.dept_id = s.dept_id;
+
+<span class="cm2">-- 视图2：订阅单明细全景（订单+下单人+部门+报刊+明细）</span>
+CREATE OR REPLACE VIEW v_order_detail AS
+SELECT o.order_id, o.sub_date, o.start_date, o.end_date,
+       o.order_status, o.total_amount,
+       s.sub_id, s.sub_name, d.dept_name,
+       p.pub_id, p.pub_name, det.quantity, det.periods, det.subtotal
+FROM subscription o
+JOIN subscriber s ON s.sub_id = o.orderer_id
+JOIN department d ON d.dept_id = s.dept_id
+JOIN subscription_detail det ON det.order_id = o.order_id
+JOIN publication p ON p.pub_id = det.pub_id;
+
+<span class="cm2">-- 视图3：待审核订阅单（审核工作台）</span>
+CREATE OR REPLACE VIEW v_pending_orders AS
+SELECT o.order_id, s.sub_name, d.dept_name, o.sub_date,
+       o.start_date, o.end_date, o.total_amount
+FROM subscription o
+JOIN subscriber s ON s.sub_id = o.orderer_id
+JOIN department d ON d.dept_id = s.dept_id
+WHERE o.order_status = '待审核';</div>
+  <div class="code"><span class="cm2">-- 视图4：按人员订阅统计（仅统计已通过订单）</span>
+CREATE OR REPLACE VIEW v_person_stat AS
+SELECT s.sub_id, s.sub_name, d.dept_name,
+       COUNT(DISTINCT o.order_id)  AS order_cnt,
+       SUM(det.quantity)           AS total_qty,
+       SUM(det.subtotal)           AS total_amount
+FROM subscription o
+JOIN subscriber s ON s.sub_id = o.orderer_id
+JOIN department d ON d.dept_id = s.dept_id
+JOIN subscription_detail det ON det.order_id = o.order_id
+WHERE o.order_status = '已通过'
+GROUP BY s.sub_id, s.sub_name, d.dept_name;
+
+<span class="cm2">-- 视图5：按部门订阅统计</span>
+CREATE OR REPLACE VIEW v_dept_stat AS
+SELECT d.dept_id, d.dept_name,
+       COUNT(DISTINCT o.order_id)  AS order_cnt,
+       COUNT(DISTINCT s.sub_id)    AS person_cnt,
+       SUM(det.quantity)           AS total_qty,
+       SUM(det.subtotal)           AS total_amount
+FROM subscription o
+JOIN subscriber s ON s.sub_id = o.orderer_id
+JOIN department d ON d.dept_id = s.dept_id
+JOIN subscription_detail det ON det.order_id = o.order_id
+WHERE o.order_status = '已通过'
+GROUP BY d.dept_id, d.dept_name;
+
+<span class="cm2">-- 视图6：按报刊订阅统计</span>
+CREATE OR REPLACE VIEW v_pub_stat AS
+SELECT p.pub_id, p.pub_name, c.cat_name, p.period, p.unit_price,
+       SUM(det.quantity) AS total_qty,
+       SUM(det.subtotal) AS total_amount
+FROM subscription_detail det
+JOIN publication p ON p.pub_id = det.pub_id
+JOIN category   c ON c.cat_id = p.cat_id
+JOIN subscription o ON o.order_id = det.order_id
+WHERE o.order_status = '已通过'
+GROUP BY p.pub_id, p.pub_name, c.cat_name, p.period, p.unit_price;</div>
+  <div class="code"><span class="cm2">-- 视图7：个人订单视图（行级安全：按数据库登录账号自动过滤，
+-- 账号名与订阅人员用户名一致时，仅返回本人订单）</span>
+CREATE OR REPLACE VIEW v_user_orders AS
+SELECT o.order_id, o.sub_date, o.start_date, o.end_date,
+       o.total_amount, o.order_status,
+       p.pub_name, det.quantity, det.periods, det.subtotal
+FROM subscription o
+JOIN subscription_detail det ON det.order_id = o.order_id
+JOIN publication p ON p.pub_id = det.pub_id
+WHERE o.orderer_id = (
+    SELECT s.sub_id FROM subscriber s
+    WHERE s.username = SUBSTRING_INDEX(CURRENT_USER(), '@', 1)
+);</div>
+</section>
+
+<footer style="text-align:center;color:#889;font-size:13px;font-family:'Microsoft YaHei',sans-serif;margin-top:6px">本页为报告第四章草稿：正文可直接粘入 Word；对应 SQL 脚本见 sql/01_create_database.sql、sql/02_views.sql。</footer>
+</div>
+</body>
+</html>
