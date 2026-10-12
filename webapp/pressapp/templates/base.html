@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}工作台{% endblock %} · 报刊订阅管理系统</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23A6341B'/><rect x='3' y='4' width='10' height='1.6' fill='white'/><rect x='3' y='7' width='7' height='1.2' fill='white'/><rect x='3' y='10' width='9' height='1.2' fill='white'/></svg>">
+{% block head %}{% endblock %}
+</head>
+<body class="app">
+<aside class="side" id="side">
+  <a class="mast" href="{{ url_for('dashboard.dashboard') }}">
+    <span class="mast-name">报刊订阅</span>
+    <span class="mast-sub">管理系统 · PRESS SUBSCRIPTION</span>
+  </a>
+  <nav class="nav">
+    {% set r = session['role'] %}
+    <a class="nav-item {{ 'is-on' if request.path in ('/', '/dashboard') }}" href="{{ url_for('dashboard.dashboard') }}">工作台</a>
+
+    {% if r == '系统管理员' %}
+    <div class="nav-group">订阅业务</div>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/audit') }}" href="{{ url_for('orders.audit_list') }}">订单审核</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/orders') }}" href="{{ url_for('orders.order_list') }}">全部订单</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/query') }}" href="{{ url_for('stats.query') }}">订阅查询</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/stats') }}" href="{{ url_for('stats.stats') }}">统计分析</a>
+    <div class="nav-group">基础数据</div>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/departments') }}" href="{{ url_for('admin.departments') }}">部门管理</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/subscribers') }}" href="{{ url_for('admin.subscribers') }}">人员管理</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/categories') }}" href="{{ url_for('admin.categories') }}">报刊类别</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/publications') }}" href="{{ url_for('admin.publications') }}">报刊管理</a>
+    <div class="nav-group">系统</div>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/logs') }}" href="{{ url_for('admin.logs') }}">操作日志</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/maintenance') }}" href="{{ url_for('admin.maintenance') }}">系统维护</a>
+
+    {% elif r == '部门管理员' %}
+    <div class="nav-group">订阅业务</div>
+    <a class="nav-item {{ 'is-on' if request.path == '/orders/new' }}" href="{{ url_for('orders.order_new') }}">代订报刊</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/orders') }}" href="{{ url_for('orders.order_list') }}">本部门订单</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/query') }}" href="{{ url_for('stats.query') }}">订阅查询</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/stats') }}" href="{{ url_for('stats.stats') }}">统计分析</a>
+    <div class="nav-group">部门数据</div>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/members') }}" href="{{ url_for('admin.members') }}">本部门人员</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/publications') }}" href="{{ url_for('admin.publications') }}">报刊目录</a>
+
+    {% else %}
+    <div class="nav-group">订阅服务</div>
+    <a class="nav-item {{ 'is-on' if request.path == '/orders/new' }}" href="{{ url_for('orders.order_new') }}">新建订阅</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/orders') }}" href="{{ url_for('orders.order_list') }}">我的订单</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/publications') }}" href="{{ url_for('admin.publications') }}">浏览报刊</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/query') }}" href="{{ url_for('stats.query') }}">我的订阅查询</a>
+    <a class="nav-item {{ 'is-on' if request.path.startswith('/stats') }}" href="{{ url_for('stats.stats') }}">报刊排行</a>
+    {% endif %}
+  </nav>
+  <div class="side-foot">
+    <span>MySQL 8.0 · press_sub_db</span>
+    <span>数据库原理实践 · 选题32</span>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <button class="topbar-burger" id="burger" aria-label="收起菜单">☰</button>
+    <div class="dateline">
+      <span class="dateline-date">{{ now().strftime('%Y年%m月%d日') }}</span>
+      <span class="dateline-week">{{ weekday(now()) }}</span>
+    </div>
+    <div class="who" id="who">
+      <button class="who-btn" id="who-btn">
+        <span class="who-name">{{ session['sub_name'] }}</span>
+        <span class="who-role">{{ session['role'] }}</span>
+        <span class="who-caret">▾</span>
+      </button>
+      <div class="who-menu" id="who-menu" hidden>
+        <a href="{{ url_for('auth.profile') }}">个人中心</a>
+        <a href="{{ url_for('auth.password') }}">修改口令</a>
+        <a href="{{ url_for('auth.logout') }}" class="who-out">退出登录</a>
+      </div>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="toasts" id="toasts">
+      {% for cat, msg in messages %}
+      <div class="toast toast-{{ 'error' if cat == 'error' else 'ok' }}" role="alert">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="foot">
+    <span>《数据库原理实践》课程设计 · 报刊订阅管理系统</span>
+    <span>当前登录身份：{{ session['role'] }} · {{ session['sub_id'] }}</span>
+  </footer>
+</div>
+
+<div class="mask" id="mask" hidden></div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}本部门人员{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">本部门人员</h1>
+    <p class="page-sub">{{ mine }} · 名册来自视图 v_user_brief（不含登录凭据）</p>
+  </div>
+</div>
+
+<section class="panel">
+  <form class="toolbar" method="get" action="{{ url_for('admin.members') }}">
+    <input class="input search" type="text" name="q" value="{{ q }}" placeholder="姓名 / 电话（模糊）">
+    <button class="btn" type="submit">查询</button>
+    {% if q %}<a class="btn btn-ghost" href="{{ url_for('admin.members') }}">清空</a>{% endif %}
+    <span class="toolbar-note">共 {{ pg.total }} 人</span>
+  </form>
+
+  <table class="table">
+    <thead><tr>
+      <th>人员编号</th><th>姓名</th><th>性别</th><th>联系电话</th>
+      <th>通信地址</th><th>角色</th>
+    </tr></thead>
+    <tbody>
+    {% for s in pg.rows %}
+      <tr>
+        <td class="mono">{{ s.sub_id }}</td>
+        <td class="strong">{{ s.sub_name }}</td>
+        <td>{{ s.gender or '—' }}</td>
+        <td class="mono">{{ s.phone or '—' }}</td>
+        <td class="dim">{{ s.address or '—' }}</td>
+        <td><span class="role-tag role-{{ 'sys' if s.role == '系统管理员' else ('dept' if s.role == '部门管理员' else 'user') }}">{{ s.role }}</span></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="empty">没有匹配的人员</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pager.html" %}
+</section>
+{% endblock %}

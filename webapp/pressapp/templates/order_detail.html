@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}订阅单 {{ head.order_id }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">订阅单详情</h1>
+    <p class="page-sub">订单号 <b class="mono">{{ head.order_id }}</b> ·
+      <span class="stamp {{ head.order_status|status_class }}">{{ head.order_status }}</span></p>
+  </div>
+  <div class="page-actions">
+    {% if can_audit %}
+    <button class="btn btn-primary" type="button" onclick="document.getElementById('audit-box').scrollIntoView({behavior:'smooth'})">审核此单</button>
+    {% endif %}
+    {% if can_cancel %}
+    <form method="post" action="{{ url_for('orders.cancel', order_id=head.order_id) }}" class="inline-form"
+          data-confirm="确认退订该订阅单？状态将变为「已退订」，历史记录保留。">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-danger" type="submit">申请退订</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><h2 class="panel-title">订单信息</h2></div>
+  <div class="detail-grid">
+    <div class="detail-item"><span class="detail-key">下单人</span><span class="strong">{{ head.sub_name }}</span></div>
+    <div class="detail-item"><span class="detail-key">所属部门</span><span>{{ head.dept_name }}</span></div>
+    <div class="detail-item"><span class="detail-key">订阅日期</span><span>{{ head.sub_date|dt }}</span></div>
+    <div class="detail-item"><span class="detail-key">起订日期</span><span>{{ head.start_date|dt }}</span></div>
+    <div class="detail-item"><span class="detail-key">截止日期</span><span>{{ head.end_date|dt }}</span></div>
+    <div class="detail-item"><span class="detail-key">总金额</span><span class="strong amount">¥{{ head.total_amount|money }}</span></div>
+    <div class="detail-item"><span class="detail-key">审核人</span><span>{{ head.auditor_name or head.auditor_id or '—' }}</span></div>
+    <div class="detail-item"><span class="detail-key">审核时间</span><span>{{ head.audit_time|dt('%Y-%m-%d %H:%M') if head.audit_time else '—' }}</span></div>
+    <div class="detail-item detail-item-wide"><span class="detail-key">审核意见</span><span>{{ head.audit_comment or '—' }}</span></div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2 class="panel-title">订阅明细（{{ details|length }} 种报刊）</h2>
+    <span class="panel-note">小计 = 单价 × 份数 × 期数，由触发器 trg_det_before_ins 自动计算</span>
+  </div>
+  <table class="table">
+    <thead><tr>
+      <th>报刊编号</th><th>报刊名称</th><th>刊期</th>
+      <th class="num">单价（元）</th><th class="num">份数</th><th class="num">期数</th>
+      <th class="num">小计（元）</th>
+    </tr></thead>
+    <tbody>
+      {% for d in details %}
+      <tr>
+        <td class="mono">{{ d.pub_id }}</td>
+        <td class="strong">{{ d.pub_name }}</td>
+        <td>{{ d.period }}</td>
+        <td class="num">{{ d.unit_price|money }}</td>
+        <td class="num">{{ d.quantity }}</td>
+        <td class="num">{{ d.periods }}</td>
+        <td class="num strong">{{ d.subtotal|money }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-total"><td colspan="6">总金额（触发器 trg_det_after_ins 汇总）</td>
+        <td class="num strong">¥{{ head.total_amount|money }}</td></tr>
+    </tfoot>
+  </table>
+
+  {% if can_add %}
+  <form class="add-detail" method="post" action="{{ url_for('orders.add_detail', order_id=head.order_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <span class="add-detail-label">追加报刊：</span>
+    <select class="input select" name="pub_id" required>
+      <option value="">选择报刊</option>
+      {% for cat, group in pubs|groupby('cat_name') %}
+      <optgroup label="{{ cat }}">
+        {% for p in group %}
+        <option value="{{ p.pub_id }}">{{ p.pub_name }}（{{ p.unit_price|money }} 元/{{ p.period }}）</option>
+        {% endfor %}
+      </optgroup>
+      {% endfor %}
+    </select>
+    <input class="input num-input" type="number" name="quantity" min="1" max="999" value="1" title="份数">
+    <input class="input num-input" type="number" name="periods" min="1" max="365" value="12" title="期数">
+    <button class="btn" type="submit">追加明细</button>
+    <span class="field-note">仅「待审核」订单可追加</span>
+  </form>
+  {% endif %}
+</section>
+
+{% if can_audit %}
+<section class="panel" id="audit-box">
+  <div class="panel-head"><h2 class="panel-title">审核操作</h2>
+    <span class="panel-note">经由存储过程 sp_audit_order 完成，仅系统管理员可执行</span></div>
+  <form method="post" action="{{ url_for('orders.audit', order_id=head.order_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="field">
+      <span class="field-label">审核意见</span>
+      <input class="input" type="text" name="comment" maxlength="100"
+             placeholder="如：预算内，同意 / 份数与部门编制不符，驳回">
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" name="action" value="pass" type="submit">通过</button>
+      <button class="btn btn-danger" name="action" value="reject" type="submit">驳回</button>
+      <a class="btn btn-ghost" href="{{ url_for('orders.audit_list') }}">返回待审核列表</a>
+    </div>
+  </form>
+</section>
+{% endif %}
+
+<div class="form-actions form-actions-page">
+  <a class="btn btn-ghost" href="{{ url_for('orders.order_list') }}">返回订单列表</a>
+</div>
+{% endblock %}

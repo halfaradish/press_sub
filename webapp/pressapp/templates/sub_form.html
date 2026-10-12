@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑人员' if sub else '新增人员' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ '编辑人员' if sub else '新增人员' }}</h1>
+    <p class="page-sub">{{ sub.sub_id if sub else '人员编号由系统按规则自动分配（EMP + 5 位流水）' }}</p>
+  </div>
+</div>
+
+<section class="panel panel-narrow">
+  <form method="post"
+        action="{{ url_for('admin.subscriber_edit', sub_id=sub.sub_id) if sub else url_for('admin.subscriber_new') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="field">
+      <span class="field-label">姓名 <i class="req">必填</i></span>
+      <input class="input" type="text" name="sub_name" required maxlength="20"
+             value="{{ sub.sub_name if sub else '' }}">
+    </label>
+    <div class="field-row">
+      <label class="field">
+        <span class="field-label">性别</span>
+        <select class="input select" name="gender">
+          <option value="">未填</option>
+          <option value="男" {{ 'selected' if sub and sub.gender == '男' }}>男</option>
+          <option value="女" {{ 'selected' if sub and sub.gender == '女' }}>女</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">联系电话</span>
+        <input class="input" type="text" name="phone" maxlength="11"
+               value="{{ sub.phone if sub else '' }}" placeholder="11 位手机号">
+      </label>
+    </div>
+    <label class="field">
+      <span class="field-label">通信地址</span>
+      <input class="input" type="text" name="address" maxlength="50"
+             value="{{ sub.address if sub else '' }}" placeholder="报刊投递地址">
+    </label>
+    <div class="field-row">
+      <label class="field">
+        <span class="field-label">所属部门 <i class="req">必填</i></span>
+        <select class="input select" name="dept_id" required>
+          <option value="">请选择</option>
+          {% for d in depts %}
+          <option value="{{ d.dept_id }}" {{ 'selected' if sub and sub.dept_id == d.dept_id }}>{{ d.dept_name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">系统角色</span>
+        <select class="input select" name="role">
+          {% for r in ['订阅用户','部门管理员','系统管理员'] %}
+          <option value="{{ r }}" {{ 'selected' if sub and sub.role == r }}>{{ r }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="field-row">
+      <label class="field">
+        <span class="field-label">登录用户名 <i class="req">必填</i></span>
+        <input class="input" type="text" name="username" required maxlength="20"
+               value="{{ sub.username if sub else '' }}" placeholder="字母/数字/下划线">
+      </label>
+      {% if not sub %}
+      <label class="field">
+        <span class="field-label">初始口令</span>
+        <input class="input" type="text" name="password" maxlength="32" value="123456"
+               placeholder="留空则默认 123456">
+        <span class="field-note">以 SHA-256 摘要存储，登录后可在个人中心修改</span>
+      </label>
+      {% endif %}
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">保存</button>
+      <a class="btn btn-ghost" href="{{ url_for('admin.subscribers') }}">返回列表</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

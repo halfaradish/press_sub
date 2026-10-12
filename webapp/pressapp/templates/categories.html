@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}报刊类别{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">报刊类别</h1>
+    <p class="page-sub">分类字典维护 · 类别名称唯一，删除前需先移除该类别下的报刊</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-primary" href="{{ url_for('admin.category_new') }}">新增类别</a>
+  </div>
+</div>
+
+<section class="panel">
+  <form class="toolbar" method="get" action="{{ url_for('admin.categories') }}">
+    <input class="input search" type="text" name="q" value="{{ q }}" placeholder="类别名称 / 说明（模糊）">
+    <button class="btn" type="submit">查询</button>
+    {% if q %}<a class="btn btn-ghost" href="{{ url_for('admin.categories') }}">清空</a>{% endif %}
+    <span class="toolbar-note">共 {{ pg.total }} 类</span>
+  </form>
+  <table class="table">
+    <thead><tr><th>编号</th><th>类别名称</th><th>类别说明</th><th class="num">报刊数</th><th class="act-col">操作</th></tr></thead>
+    <tbody>
+    {% for c in pg.rows %}
+      <tr>
+        <td class="mono">{{ c.cat_id }}</td>
+        <td class="strong">{{ c.cat_name }}</td>
+        <td class="dim">{{ c.cat_desc or '—' }}</td>
+        <td class="num">{{ c.pub_cnt }}</td>
+        <td class="row-act">
+          <a href="{{ url_for('admin.category_edit', cat_id=c.cat_id) }}">编辑</a>
+          <form method="post" class="inline-form"
+                action="{{ url_for('admin.category_delete', cat_id=c.cat_id) }}"
+                data-confirm="确认删除类别「{{ c.cat_name }}」？该类别下仍有报刊时将被拒绝。">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="linklike danger" type="submit">删除</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty">没有匹配的类别</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pager.html" %}
+</section>
+{% endblock %}

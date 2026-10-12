@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑部门' if dept else '新增部门' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ '编辑部门' if dept else '新增部门' }}</h1>
+    <p class="page-sub">{{ dept.dept_id if dept else '部门编号由系统按规则自动分配（D + 5 位流水）' }}</p>
+  </div>
+</div>
+
+<section class="panel panel-narrow">
+  <form method="post"
+        action="{{ url_for('admin.department_edit', dept_id=dept.dept_id) if dept else url_for('admin.department_new') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="field">
+      <span class="field-label">部门名称 <i class="req">必填</i></span>
+      <input class="input" type="text" name="dept_name" required maxlength="30"
+             value="{{ dept.dept_name if dept else '' }}" placeholder="如：计算机与电子信息学院">
+    </label>
+    <label class="field">
+      <span class="field-label">办公地点</span>
+      <input class="input" type="text" name="location" maxlength="30"
+             value="{{ dept.location if dept else '' }}" placeholder="如：工科楼A501">
+    </label>
+    <label class="field">
+      <span class="field-label">联系电话</span>
+      <input class="input" type="text" name="phone" maxlength="13"
+             value="{{ dept.phone if dept else '' }}" placeholder="0771-3232001（可含区号）">
+      <span class="field-note">7~13 位数字或「-」组合，由 CHECK 约束校验</span>
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">保存</button>
+      <a class="btn btn-ghost" href="{{ url_for('admin.departments') }}">返回列表</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

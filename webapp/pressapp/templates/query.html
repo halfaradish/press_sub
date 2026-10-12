@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}订阅查询{% endblock %}
+{% block head %}<script src="{{ url_for('static', filename='vendor/echarts.min.js') }}"></script>{% endblock %}
+
+{% block content %}
+<div class="page-head print-head">
+  <div>
+    <h1 class="page-title">订阅查询</h1>
+    <p class="page-sub">
+      订阅明细多表连接视图 v_order_detail · 姓名/报刊/部门/订单号均支持模糊查询
+      {% if session['role'] == '部门管理员' %}（仅本部门：{{ session['dept_name'] }}）
+      {% elif session['role'] == '订阅用户' %}（仅本人订单）{% endif %}
+    </p>
+  </div>
+  <div class="page-actions no-print">
+    <button class="btn" type="button" data-print>打印 / 导出 PDF</button>
+  </div>
+</div>
+
+<section class="panel print-area">
+  <form class="toolbar" method="get" action="{{ url_for('stats.query') }}">
+    <input class="input search" type="text" name="q" value="{{ q }}"
+           placeholder="订阅人 / 报刊 / 部门 / 订单号（模糊，如：王）">
+    <select class="input select" name="status">
+      <option value="">全部状态</option>
+      {% for s in ['待审核','已通过','已驳回','已退订'] %}
+      <option value="{{ s }}" {{ 'selected' if f_status == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    {% if depts %}
+    <select class="input select" name="dept">
+      <option value="">全部部门</option>
+      {% for d in depts %}
+      <option value="{{ d.dept_name }}" {{ 'selected' if f_dept == d.dept_name }}>{{ d.dept_name }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
+    <input class="input input-date" type="date" name="d1" value="{{ d1 }}" title="订阅日期起">
+    <span class="toolbar-dash">—</span>
+    <input class="input input-date" type="date" name="d2" value="{{ d2 }}" title="订阅日期止">
+    <button class="btn" type="submit">查询</button>
+    {% if q or f_status or f_dept or d1 or d2 %}
+    <a class="btn btn-ghost" href="{{ url_for('stats.query') }}">清空</a>
+    {% endif %}
+  </form>
+
+  <table class="table">
+    <thead><tr>
+      <th>订单号</th><th>订阅日期</th><th>订阅人</th><th>部门</th>
+      <th>报刊</th><th class="num">份数</th><th class="num">期数</th>
+      <th class="num">小计（元）</th><th class="num">订单总额（元）</th><th>状态</th>
+    </tr></thead>
+    <tbody>
+    {% for d in pg.rows %}
+      <tr>
+        <td><a class="mono-link" href="{{ url_for('orders.order_detail', order_id=d.order_id) }}">{{ d.order_id }}</a></td>
+        <td>{{ d.sub_date|dt }}</td>
+        <td class="strong">{{ d.sub_name or session['sub_name'] }}</td>
+        <td class="dim">{{ d.dept_name or session['dept_name'] }}</td>
+        <td>{{ d.pub_name }}</td>
+        <td class="num">{{ d.quantity }}</td>
+        <td class="num">{{ d.periods }}</td>
+        <td class="num">{{ d.subtotal|money }}</td>
+        <td class="num strong">{{ d.total_amount|money }}</td>
+        <td><span class="stamp {{ d.order_status|status_class }}">{{ d.order_status }}</span></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="10" class="empty">没有匹配的订阅记录{% if q %}（可尝试更短的关键字，如只输入姓氏）{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pager.html" %}
+  <p class="field-note query-note">
+    查询示例：输入「王」可查出所有王姓订阅人（模糊查询）；选择状态「已通过」并限定日期区间可输出阶段订阅清单，供打印存档。
+  </p>
+</section>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑报刊' if pub else '新增报刊' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ '编辑报刊' if pub else '新增报刊' }}</h1>
+    <p class="page-sub">{{ pub.pub_id if pub else '报刊编号由系统按规则自动分配（P + 7 位流水）' }}</p>
+  </div>
+</div>
+
+<section class="panel panel-narrow">
+  <form method="post"
+        action="{{ url_for('admin.publication_edit', pub_id=pub.pub_id) if pub else url_for('admin.publication_new') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="field">
+      <span class="field-label">报刊名称 <i class="req">必填</i></span>
+      <input class="input" type="text" name="pub_name" required maxlength="40"
+             value="{{ pub.pub_name if pub else '' }}" placeholder="如：南国早报">
+    </label>
+    <div class="field-row">
+      <label class="field">
+        <span class="field-label">所属类别 <i class="req">必填</i></span>
+        <select class="input select" name="cat_id" required>
+          <option value="">请选择</option>
+          {% for c in cats %}
+          <option value="{{ c.cat_id }}" {{ 'selected' if pub and pub.cat_id == c.cat_id }}>{{ c.cat_name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">刊期 <i class="req">必填</i></span>
+        <select class="input select" name="period" required>
+          {% for p in ['日报','周报','半月刊','月刊','双月刊'] %}
+          <option value="{{ p }}" {{ 'selected' if pub and pub.period == p }}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+    <div class="field-row">
+      <label class="field">
+        <span class="field-label">单价（元/期） <i class="req">必填</i></span>
+        <input class="input" type="number" name="unit_price" step="0.01" min="0.01" max="999"
+               required value="{{ pub.unit_price if pub else '' }}">
+        <span class="field-note">CHECK 约束要求大于 0；订阅金额 = 单价 × 份数 × 期数</span>
+      </label>
+      <label class="field">
+        <span class="field-label">出版社</span>
+        <input class="input" type="text" name="publisher" maxlength="30"
+               value="{{ pub.publisher if pub else '' }}">
+      </label>
+    </div>
+    <label class="field">
+      <span class="field-label">维护人</span>
+      <select class="input select" name="maintainer">
+        <option value="">未指定</option>
+        {% for a in admins %}
+        <option value="{{ a.sub_id }}" {{ 'selected' if pub and pub.maintainer == a.sub_id }}>{{ a.sub_name }}（{{ a.sub_id }}）</option>
+        {% endfor %}
+      </select>
+      <span class="field-note">维护联系 1:n 由外码 maintainer 实现，限定系统管理员</span>
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">保存</button>
+      <a class="btn btn-ghost" href="{{ url_for('admin.publications') }}">返回列表</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

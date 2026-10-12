@@ -1,0 +1,26 @@
+{% set qs = request.args.to_dict() %}
+{% if pg.pages > 1 %}
+<nav class="pager" aria-label="分页">
+  <span class="pager-info">共 {{ pg.total }} 条 · 第 {{ pg.page }} / {{ pg.pages }} 页</span>
+  <div class="pager-btns">
+    {% set _ = qs.update({'page': [pg.page - 1, 1]|max}) %}
+    {% if pg.page > 1 %}
+    <a class="pager-btn" href="{{ url_for(request.endpoint, **qs) }}">上一页</a>
+    {% endif %}
+    {% set start = [1, pg.page - 2]|max %}
+    {% set end = [pg.pages, start + 4]|min %}
+    {% for p in range(start, end + 1) %}
+      {% set _ = qs.update({'page': p}) %}
+      {% if p == pg.page %}
+      <span class="pager-btn is-on">{{ p }}</span>
+      {% else %}
+      <a class="pager-btn" href="{{ url_for(request.endpoint, **qs) }}">{{ p }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if pg.page < pg.pages %}
+      {% set _ = qs.update({'page': pg.page + 1}) %}
+      <a class="pager-btn" href="{{ url_for(request.endpoint, **qs) }}">下一页</a>
+    {% endif %}
+  </div>
+</nav>
+{% endif %}

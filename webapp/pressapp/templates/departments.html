@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}部门管理{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">部门管理</h1>
+    <p class="page-sub">全校组织机构维护 · 支持按名称、办公地点模糊查询</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-primary" href="{{ url_for('admin.department_new') }}">新增部门</a>
+  </div>
+</div>
+
+<section class="panel">
+  <form class="toolbar" method="get" action="{{ url_for('admin.departments') }}">
+    <input class="input search" type="text" name="q" value="{{ q }}"
+           placeholder="部门名称 / 办公地点 关键字">
+    <button class="btn" type="submit">查询</button>
+    {% if q %}<a class="btn btn-ghost" href="{{ url_for('admin.departments') }}">清空</a>{% endif %}
+    <span class="toolbar-note">共 {{ pg.total }} 条记录</span>
+  </form>
+
+  <table class="table">
+    <thead><tr>
+      <th>部门编号</th><th>部门名称</th><th>办公地点</th><th>联系电话</th>
+      <th class="num">人数</th><th class="act-col">操作</th>
+    </tr></thead>
+    <tbody>
+    {% for d in pg.rows %}
+      <tr>
+        <td class="mono">{{ d.dept_id }}</td>
+        <td class="strong">{{ d.dept_name }}</td>
+        <td>{{ d.location or '—' }}</td>
+        <td class="mono">{{ d.phone or '—' }}</td>
+        <td class="num">{{ d.member_cnt }}</td>
+        <td class="row-act">
+          <a href="{{ url_for('admin.department_edit', dept_id=d.dept_id) }}">编辑</a>
+          <form method="post" action="{{ url_for('admin.department_delete', dept_id=d.dept_id) }}"
+                class="inline-form" data-confirm="确认删除部门「{{ d.dept_name }}」？若已有人员归属将无法删除。">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="linklike danger" type="submit">删除</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="empty">没有匹配的部门</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pager.html" %}
+</section>
+{% endblock %}

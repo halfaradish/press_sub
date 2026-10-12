@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}个人中心{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">个人中心</h1>
+    <p class="page-sub">基本信息来自视图 v_user_brief（屏蔽登录凭据）</p>
+  </div>
+</div>
+
+<div class="split">
+  <section class="panel panel-narrow">
+    <div class="panel-head"><h2 class="panel-title">基本信息</h2></div>
+    <div class="profile-rows">
+      <div class="profile-row"><span>姓名</span><b>{{ me.sub_name }}</b></div>
+      <div class="profile-row"><span>人员编号</span><b class="mono">{{ me.sub_id }}</b></div>
+      <div class="profile-row"><span>所属部门</span><b>{{ me.dept_name }}</b></div>
+      <div class="profile-row"><span>系统角色</span><b><span class="role-tag role-{{ 'sys' if me.role == '系统管理员' else ('dept' if me.role == '部门管理员' else 'user') }}">{{ me.role }}</span></b></div>
+      <div class="profile-row"><span>性别</span><b>{{ me.gender or '—' }}</b></div>
+      <div class="profile-row"><span>联系电话</span><b class="mono">{{ me.phone or '—' }}</b></div>
+      <div class="profile-row"><span>通信地址</span><b>{{ me.address or '—' }}</b></div>
+      <div class="profile-row"><span>累计订阅金额</span><b class="amount">¥{{ total|money }}</b>
+        <em class="field-note">已通过订单合计 · 函数 fn_person_total_amount</em></div>
+    </div>
+  </section>
+
+  <section class="panel panel-narrow">
+    <div class="panel-head"><h2 class="panel-title">修改登录口令</h2>
+      <span class="panel-note">口令以 SHA-256 摘要存储于 subscriber.password</span></div>
+    <form method="post" action="{{ url_for('auth.password') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="field">
+        <span class="field-label">原口令</span>
+        <input class="input" type="password" name="old_password" required autocomplete="current-password">
+      </label>
+      <label class="field">
+        <span class="field-label">新口令（至少 6 位）</span>
+        <input class="input" type="password" name="new_password" required minlength="6" autocomplete="new-password">
+      </label>
+      <label class="field">
+        <span class="field-label">确认新口令</span>
+        <input class="input" type="password" name="new_password2" required minlength="6" autocomplete="new-password">
+      </label>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">更新口令</button>
+      </div>
+    </form>
+    <p class="field-note">口令更新经由认证专用数据库账号完成——该账号仅被授权更新
+      subscriber 表的 password 一列（列级授权），不能读取或修改其他数据。</p>
+  </section>
+</div>
+{% endblock %}

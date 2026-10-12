@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}系统维护{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">系统维护</h1>
+    <p class="page-sub">数据库对象清册 · 数据备份 · 当前连接身份</p>
+  </div>
+  <div class="page-actions">
+    <form method="post" action="{{ url_for('admin.backup') }}" class="inline-form"
+          data-confirm="执行 mysqldump 全库备份到 backups/ 目录？">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-primary" type="submit">立即备份数据库</button>
+    </form>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><h2 class="panel-title">运行环境</h2></div>
+  <div class="detail-grid">
+    <div class="detail-item"><span class="detail-key">MySQL 版本</span><span class="mono">{{ info.version }}</span></div>
+    <div class="detail-item"><span class="detail-key">当前数据库账号</span><span class="mono">{{ info.user }}</span></div>
+    <div class="detail-item"><span class="detail-key">数据库</span><span class="mono">press_sub_db（InnoDB · utf8mb4）</span></div>
+    <div class="detail-item"><span class="detail-key">登录人</span><span>{{ session['sub_name'] }}（{{ session['role'] }}）</span></div>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head"><h2 class="panel-title">数据表清册</h2>
+    <span class="panel-note">table_rows 为估算值，准确行数以 COUNT(*) 为准</span></div>
+  <table class="table">
+    <thead><tr><th>表名</th><th>说明</th><th class="num">约行数</th><th class="num">占用（KB）</th></tr></thead>
+    <tbody>
+      {% for t in info.tables %}
+      <tr>
+        <td class="mono strong">{{ t.tname }}</td>
+        <td class="dim">{{ t.tcomment or '—' }}</td>
+        <td class="num">{{ t.trows }}</td>
+        <td class="num">{{ t.kb }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<div class="split">
+  <section class="panel">
+    <div class="panel-head"><h2 class="panel-title">视图与存储过程 / 函数</h2></div>
+    <table class="table">
+      <thead><tr><th>名称</th><th>类型</th></tr></thead>
+      <tbody>
+        {% for r in info.views %}
+        <tr><td class="mono">{{ r.v }}</td><td><span class="op-tag op-维护">视图</span></td></tr>
+        {% endfor %}
+        {% for r in info.routines %}
+        <tr><td class="mono">{{ r.rname }}</td>
+            <td><span class="op-tag op-审核">{{ '存储过程' if r.rtype == 'PROCEDURE' else '函数' }}</span></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><h2 class="panel-title">触发器</h2></div>
+    <table class="table">
+      <thead><tr><th>触发器</th><th>表</th><th>时机 / 事件</th></tr></thead>
+      <tbody>
+        {% for t in info.triggers %}
+        <tr>
+          <td class="mono strong">{{ t.tname }}</td>
+          <td class="mono">{{ t.ttable }}</td>
+          <td>{{ t.timing }} {{ t.event }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}

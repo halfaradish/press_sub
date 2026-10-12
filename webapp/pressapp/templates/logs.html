@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}操作日志{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">操作日志</h1>
+    <p class="page-sub">
+      来源：应用显式写入 + 数据库触发器自动记录（下单/审核/退订等状态变化）·
+      内容与操作人均支持模糊查询
+    </p>
+  </div>
+</div>
+
+<section class="panel">
+  <form class="toolbar" method="get" action="{{ url_for('admin.logs') }}">
+    <input class="input search" type="text" name="q" value="{{ q }}" placeholder="操作内容 / 操作人（模糊）">
+    <select class="input select" name="op">
+      <option value="">全部类型</option>
+      {% for t in ['登录','下单','审核','退订','维护','查询'] %}
+      <option value="{{ t }}" {{ 'selected' if f_op == t }}>{{ t }}</option>
+      {% endfor %}
+    </select>
+    <input class="input input-date" type="date" name="day" value="{{ f_day }}" title="按日期">
+    <button class="btn" type="submit">查询</button>
+    {% if q or f_op or f_day %}<a class="btn btn-ghost" href="{{ url_for('admin.logs') }}">清空</a>{% endif %}
+    <span class="toolbar-note">共 {{ pg.total }} 条</span>
+  </form>
+
+  <table class="table">
+    <thead><tr><th class="num w60">编号</th><th>时间</th><th>操作人</th><th>类型</th><th>操作内容</th></tr></thead>
+    <tbody>
+    {% for l in pg.rows %}
+      <tr>
+        <td class="num mono">{{ l.log_id }}</td>
+        <td class="mono">{{ l.op_time|dt('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>{{ l.sub_name or '系统' }}</td>
+        <td><span class="op-tag op-{{ l.op_type }}">{{ l.op_type }}</span></td>
+        <td>{{ l.op_content }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty">没有匹配的日志</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pager.html" %}
+</section>
+{% endblock %}

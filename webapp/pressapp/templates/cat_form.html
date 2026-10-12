@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ '编辑类别' if cat else '新增类别' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ '编辑类别' if cat else '新增类别' }}</h1>
+    <p class="page-sub">{{ cat.cat_id if cat else '类别编号由系统按规则自动分配（C + 3 位流水）' }}</p>
+  </div>
+</div>
+
+<section class="panel panel-narrow">
+  <form method="post"
+        action="{{ url_for('admin.category_edit', cat_id=cat.cat_id) if cat else url_for('admin.category_new') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="field">
+      <span class="field-label">类别名称 <i class="req">必填</i></span>
+      <input class="input" type="text" name="cat_name" required maxlength="20"
+             value="{{ cat.cat_name if cat else '' }}" placeholder="如：财经商业">
+    </label>
+    <label class="field">
+      <span class="field-label">类别说明</span>
+      <input class="input" type="text" name="cat_desc" maxlength="50"
+             value="{{ cat.cat_desc if cat else '' }}" placeholder="一句话说明该类覆盖范围">
+    </label>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">保存</button>
+      <a class="btn btn-ghost" href="{{ url_for('admin.categories') }}">返回列表</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

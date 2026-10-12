@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}人员管理{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">人员管理</h1>
+    <p class="page-sub">订阅人员与登录账号维护 · 支持姓名/用户名/电话模糊查询与部门、角色筛选</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-primary" href="{{ url_for('admin.subscriber_new') }}">新增人员</a>
+  </div>
+</div>
+
+<section class="panel">
+  <form class="toolbar" method="get" action="{{ url_for('admin.subscribers') }}">
+    <input class="input search" type="text" name="q" value="{{ q }}" placeholder="姓名 / 用户名 / 电话（模糊）">
+    <select class="input select" name="dept">
+      <option value="">全部部门</option>
+      {% for d in depts %}
+      <option value="{{ d.dept_id }}" {{ 'selected' if f_dept == d.dept_id }}>{{ d.dept_name }}</option>
+      {% endfor %}
+    </select>
+    <select class="input select" name="role">
+      <option value="">全部角色</option>
+      {% for r in ['系统管理员','部门管理员','订阅用户'] %}
+      <option value="{{ r }}" {{ 'selected' if f_role == r }}>{{ r }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn" type="submit">查询</button>
+    {% if q or f_dept or f_role %}<a class="btn btn-ghost" href="{{ url_for('admin.subscribers') }}">清空</a>{% endif %}
+    <span class="toolbar-note">共 {{ pg.total }} 条记录</span>
+  </form>
+
+  <table class="table">
+    <thead><tr>
+      <th>人员编号</th><th>姓名</th><th>性别</th><th>联系电话</th><th>部门</th>
+      <th>用户名</th><th>角色</th><th class="act-col">操作</th>
+    </tr></thead>
+    <tbody>
+    {% for s in pg.rows %}
+      <tr>
+        <td class="mono">{{ s.sub_id }}</td>
+        <td class="strong">{{ s.sub_name }}</td>
+        <td>{{ s.gender or '—' }}</td>
+        <td class="mono">{{ s.phone or '—' }}</td>
+        <td class="dim">{{ s.dept_name }}</td>
+        <td class="mono">{{ s.username }}</td>
+        <td><span class="role-tag role-{{ 'sys' if s.role == '系统管理员' else ('dept' if s.role == '部门管理员' else 'user') }}">{{ s.role }}</span></td>
+        <td class="row-act">
+          <a href="{{ url_for('admin.subscriber_edit', sub_id=s.sub_id) }}">编辑</a>
+          <form method="post" class="inline-form"
+                action="{{ url_for('admin.subscriber_reset', sub_id=s.sub_id) }}"
+                data-confirm="确认把「{{ s.sub_name }}」的口令重置为 123456？">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="linklike" type="submit">重置口令</button>
+          </form>
+          <form method="post" class="inline-form"
+                action="{{ url_for('admin.subscriber_delete', sub_id=s.sub_id) }}"
+                data-confirm="确认删除人员「{{ s.sub_name }}」？若存在订阅单等关联数据将无法删除。">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="linklike danger" type="submit">删除</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="empty">没有匹配的人员</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pager.html" %}
+</section>
+{% endblock %}

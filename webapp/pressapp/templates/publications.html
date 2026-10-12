@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}报刊管理{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ '报刊管理' if is_admin else '报刊目录' }}</h1>
+    <p class="page-sub">报刊名称、出版社支持模糊查询 · 可按类别、刊期筛选</p>
+  </div>
+  <div class="page-actions">
+    {% if is_admin %}
+    <a class="btn btn-primary" href="{{ url_for('admin.publication_new') }}">新增报刊</a>
+    {% else %}
+    <a class="btn btn-primary" href="{{ url_for('orders.order_new') }}">去订阅</a>
+    {% endif %}
+  </div>
+</div>
+
+<section class="panel">
+  <form class="toolbar" method="get" action="{{ url_for('admin.publications') }}">
+    <input class="input search" type="text" name="q" value="{{ q }}" placeholder="报刊名称 / 出版社（模糊）">
+    <select class="input select" name="cat">
+      <option value="">全部类别</option>
+      {% for c in cats %}
+      <option value="{{ c.cat_id }}" {{ 'selected' if f_cat == c.cat_id }}>{{ c.cat_name }}</option>
+      {% endfor %}
+    </select>
+    <select class="input select" name="period">
+      <option value="">全部刊期</option>
+      {% for p in ['日报','周报','半月刊','月刊','双月刊'] %}
+      <option value="{{ p }}" {{ 'selected' if f_period == p }}>{{ p }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn" type="submit">查询</button>
+    {% if q or f_cat or f_period %}<a class="btn btn-ghost" href="{{ url_for('admin.publications') }}">清空</a>{% endif %}
+    <span class="toolbar-note">共 {{ pg.total }} 种</span>
+  </form>
+
+  <table class="table">
+    <thead><tr>
+      <th>报刊编号</th><th>报刊名称</th><th>类别</th><th>刊期</th>
+      <th class="num">单价（元/期）</th><th>出版社</th><th>维护人</th>
+      {% if is_admin %}<th class="act-col">操作</th>{% endif %}
+    </tr></thead>
+    <tbody>
+    {% for p in pg.rows %}
+      <tr>
+        <td class="mono">{{ p.pub_id }}</td>
+        <td class="strong">{{ p.pub_name }}</td>
+        <td>{{ p.cat_name }}</td>
+        <td>{{ p.period }}</td>
+        <td class="num strong">{{ p.unit_price|money }}</td>
+        <td class="dim">{{ p.publisher or '—' }}</td>
+        <td>{{ p.maintainer_name or '—' }}</td>
+        {% if is_admin %}
+        <td class="row-act">
+          <a href="{{ url_for('admin.publication_edit', pub_id=p.pub_id) }}">编辑</a>
+          <form method="post" class="inline-form"
+                action="{{ url_for('admin.publication_delete', pub_id=p.pub_id) }}"
+                data-confirm="确认删除报刊「{{ p.pub_name }}」？已有订阅明细时将被拒绝。">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="linklike danger" type="submit">删除</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="empty">没有匹配的报刊</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pager.html" %}
+</section>
+{% endblock %}

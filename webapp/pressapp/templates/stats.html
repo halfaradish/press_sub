@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}统计分析{% endblock %}
+{% block head %}<script src="{{ url_for('static', filename='vendor/echarts.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>{% endblock %}
+
+{% block content %}
+<div class="page-head print-head">
+  <div>
+    <h1 class="page-title">统计分析</h1>
+    <p class="page-sub">
+      统计口径：已通过订单 ·
+      {% if role == '系统管理员' %}全校范围
+      {% elif role == '部门管理员' %}仅 {{ session['dept_name'] }}（人员维度限本部门）
+      {% else %}全局报刊排行 + 您本人的订阅情况{% endif %}
+    </p>
+  </div>
+  <div class="page-actions no-print">
+    <button class="btn" type="button" data-print>打印 / 导出 PDF</button>
+  </div>
+</div>
+
+<section class="chart-grid print-area">
+  <div class="panel panel-wide">
+    <div class="panel-head"><h2 class="panel-title">近 12 个月订阅金额趋势</h2>
+      <span class="panel-note">单位：元 · {{ '本人' if role == '订阅用户' else ('本部门' if role == '部门管理员' else '全局') }}</span></div>
+    <div class="chart chart-tall" id="chart-trend"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2 class="panel-title">报刊类别金额占比</h2><span class="panel-note">全局</span></div>
+    <div class="chart chart-tall" id="chart-pie"></div>
+  </div>
+  <div class="panel panel-wide">
+    <div class="panel-head"><h2 class="panel-title">报刊订阅排行（前 12）</h2><span class="panel-note">按订阅金额降序</span></div>
+    <div class="chart chart-tall" id="chart-pub"></div>
+  </div>
+  {% if role != '订阅用户' and dept_top %}
+  <div class="panel panel-wide">
+    <div class="panel-head"><h2 class="panel-title">部门订阅金额对比（前 12）</h2><span class="panel-note">按订阅金额降序</span></div>
+    <div class="chart chart-tall" id="chart-dept"></div>
+  </div>
+  {% endif %}
+</section>
+
+{% if mine %}
+<section class="panel print-area">
+  <div class="panel-head"><h2 class="panel-title">我的订阅汇总</h2></div>
+  <div class="mine-strip">
+    <span class="mine-item"><i>姓名</i><b>{{ mine.sub_name }}</b></span>
+    <span class="mine-item"><i>编号</i><b class="mono">{{ mine.sub_id }}</b></span>
+    <span class="mine-item"><i>累计订阅金额（已通过）</i><b class="amount">¥{{ my_total|money }}</b>
+      <em class="field-note">经函数 fn_person_total_amount 计算</em></span>
+  </div>
+</section>
+{% endif %}
+
+{% if person_pg %}
+<section class="panel print-area">
+  <div class="panel-head">
+    <h2 class="panel-title">按人员统计</h2>
+    <form class="toolbar toolbar-inline no-print" method="get" action="{{ url_for('stats.stats') }}">
+      <input class="input search" type="text" name="q" value="{{ q }}" placeholder="订阅人姓名（模糊，如：王）">
+      <button class="btn" type="submit">查询</button>
+    </form>
+  </div>
+  <table class="table">
+    <thead><tr>
+      <th>人员编号</th><th>姓名</th><th>部门</th>
+      <th class="num">订单数</th><th class="num">订阅份数</th><th class="num">订阅金额（元）</th>
+    </tr></thead>
+    <tbody>
+      {% for r in person_pg.rows %}
+      <tr>
+        <td class="mono">{{ r.sub_id }}</td>
+        <td class="strong">{{ r.sub_name }}</td>
+        <td class="dim">{{ r.dept_name }}</td>
+        <td class="num">{{ r.order_cnt }}</td>
+        <td class="num">{{ r.total_qty }}</td>
+        <td class="num strong">{{ r.total_amount|money }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="empty">没有匹配的统计记录</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <nav class="pager">
+    <span class="pager-info">共 {{ person_pg.total }} 人 · 第 {{ person_pg.page }} / {{ person_pg.pages }} 页</span>
+    <div class="pager-btns">
+      {% if person_pg.page > 1 %}
+      <a class="pager-btn" href="{{ url_for('stats.stats', q=q, page=person_pg.page - 1) }}">上一页</a>
+      {% endif %}
+      {% if person_pg.page < person_pg.pages %}
+      <a class="pager-btn" href="{{ url_for('stats.stats', q=q, page=person_pg.page + 1) }}">下一页</a>
+      {% endif %}
+    </div>
+  </nav>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  initStatsCharts({{ trend|tojson }}, {{ pub_top|tojson }}, {{ pub_pie|tojson }}, {{ dept_top|tojson }});
+</script>
+{% endblock %}

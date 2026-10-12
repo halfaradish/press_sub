@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>登录 · 报刊订阅管理系统</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23A6341B'/><rect x='3' y='4' width='10' height='1.6' fill='white'/><rect x='3' y='7' width='7' height='1.2' fill='white'/><rect x='3' y='10' width='9' height='1.2' fill='white'/></svg>">
+</head>
+<body class="gate">
+<div class="gate-page">
+  <div class="gate-mast">
+    <div class="gate-kicker">《数据库原理实践》课程设计 · 选题 32</div>
+    <h1 class="gate-name">报刊订阅管理系统</h1>
+    <div class="gate-rule"><i></i><b></b><i></i></div>
+    <p class="gate-sub">统一办理部门与个人报刊订阅 · 审核结算 · 统计分析</p>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="gate-alerts">
+      {% for cat, msg in messages %}
+      <div class="gate-alert {{ 'is-err' if cat == 'error' else 'is-ok' }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <form class="gate-card" method="post" action="{{ url_for('auth.login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="field">
+      <span class="field-label">用户名</span>
+      <input class="input" type="text" name="username" value="{{ username or '' }}"
+             autocomplete="username" required autofocus>
+    </label>
+    <label class="field">
+      <span class="field-label">口令</span>
+      <input class="input" type="password" name="password"
+             autocomplete="current-password" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">登 录</button>
+    <div class="gate-hint">
+      <div class="gate-hint-title">演示账号（口令均为 123456）</div>
+      <div class="gate-hint-row"><b>系统管理员</b><code>admin</code></div>
+      <div class="gate-hint-row"><b>部门管理员</b><code>dept01</code></div>
+      <div class="gate-hint-row"><b>订阅用户</b><code>任意姓名拼音，如 wangwei</code></div>
+    </div>
+  </form>
+
+  <p class="gate-foot">MySQL 8.0 · press_sub_db · 2026 秋季学期</p>
+</div>
+</body>
+</html>

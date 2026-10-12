@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}新建订阅单{% endblock %}
+{% block head %}<script src="{{ url_for('static', filename='js/order_form.js') }}" defer></script>{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">新建订阅单</h1>
+    <p class="page-sub">
+      {% if session['role'] == '部门管理员' %}为{{ session['dept_name'] }}人员代订 · 可选择一名经办对象
+      {% else %}选择报刊并填写份数与期数，金额 = 单价 × 份数 × 期数，由触发器自动计算{% endif %}
+    </p>
+  </div>
+</div>
+
+<form method="post" action="{{ url_for('orders.order_new') }}" id="order-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+  <section class="panel">
+    <div class="panel-head"><h2 class="panel-title">基本信息</h2></div>
+    <div class="field-row row-3">
+      {% if session['role'] == '部门管理员' %}
+      <label class="field">
+        <span class="field-label">下单人员 <i class="req">必填</i></span>
+        <select class="input select" name="orderer_id" required>
+          <option value="">请选择本部门人员</option>
+          {% for m in members %}
+          <option value="{{ m.sub_id }}" {{ 'selected' if form.orderer_id == m.sub_id }}>
+            {{ m.sub_name }}（{{ m.role }}）</option>
+          {% endfor %}
+        </select>
+      </label>
+      {% endif %}
+      <label class="field">
+        <span class="field-label">起订日期 <i class="req">必填</i></span>
+        <input class="input" type="date" name="start_date" required
+               min="{{ today }}" value="{{ form.start_date or '' }}">
+      </label>
+      <label class="field">
+        <span class="field-label">截止日期 <i class="req">必填</i></span>
+        <input class="input" type="date" name="end_date" required
+               value="{{ form.end_date or '' }}">
+        <span class="field-note">须晚于起订日期，且起订日期不早于今天（CHECK 约束）</span>
+      </label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <h2 class="panel-title">订阅明细</h2>
+      <button class="btn btn-ghost" type="button" id="add-item">＋ 添加一行</button>
+    </div>
+    <table class="table table-form">
+      <thead><tr>
+        <th style="width:44%">报刊（按类别分组）</th>
+        <th style="width:14%" class="num">单价（元/期）</th>
+        <th style="width:12%" class="num">份数</th>
+        <th style="width:12%" class="num">期数</th>
+        <th style="width:14%" class="num">小计（元）</th>
+        <th style="width:4%"></th>
+      </tr></thead>
+      <tbody id="item-rows">
+        <tr class="item-row">
+          <td>
+            <select class="input select pub-pick" name="pub_id[]" required>
+              <option value="">请选择报刊</option>
+              {% for cat, group in pubs|groupby('cat_name') %}
+              <optgroup label="{{ cat }}">
+                {% for p in group %}
+                <option value="{{ p.pub_id }}"
+                        data-price="{{ p.unit_price }}"
+                        data-period="{{ p.period }}">{{ p.pub_name }}（{{ p.period }}）</option>
+                {% endfor %}
+              </optgroup>
+              {% endfor %}
+            </select>
+          </td>
+          <td class="num cell-price">—</td>
+          <td><input class="input num-input" type="number" name="quantity[]" min="1" max="999" value="1"></td>
+          <td><input class="input num-input" type="number" name="periods[]" min="1" max="365" value="12"></td>
+          <td class="num cell-subtotal strong">0.00</td>
+          <td class="cell-del"><button class="linklike danger" type="button" aria-label="删除本行">✕</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="order-total">
+      <span>明细 <b id="sum-items">1</b> 行 · 份数合计 <b id="sum-qty">—</b></span>
+      <span class="order-total-amount">合计金额 <b>¥<i id="sum-amount">0.00</i></b></span>
+    </div>
+  </section>
+
+  <div class="form-actions form-actions-page">
+    <button class="btn btn-primary btn-lg" type="submit">提交订阅单</button>
+    <a class="btn btn-ghost" href="{{ url_for('orders.order_list') }}">取消</a>
+    <span class="field-note">提交后订单进入「待审核」状态，由系统管理员审核；金额以触发器计算结果为准。</span>
+  </div>
+</form>
+{% endblock %}

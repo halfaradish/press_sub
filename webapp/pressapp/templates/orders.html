@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ '全部订单' if session['role'] == '系统管理员' else ('本部门订单' if session['role'] == '部门管理员' else '我的订单') }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ '全部订单' if session['role'] == '系统管理员' else ('本部门订单' if session['role'] == '部门管理员' else '我的订单') }}</h1>
+    <p class="page-sub">订单号、报刊名称、下单人均支持模糊查询 · 可按状态筛选</p>
+  </div>
+  {% if session['role'] in ('部门管理员', '订阅用户') %}
+  <div class="page-actions"><a class="btn btn-primary" href="{{ url_for('orders.order_new') }}">新建订阅单</a></div>
+  {% endif %}
+</div>
+
+<section class="panel">
+  <form class="toolbar" method="get" action="{{ url_for('orders.order_list') }}">
+    <input class="input search" type="text" name="q" value="{{ q }}"
+           placeholder="订单号 / 报刊名称 / 下单人（模糊）">
+    <select class="input select" name="status">
+      <option value="">全部状态</option>
+      {% for s in statuses %}
+      <option value="{{ s }}" {{ 'selected' if f_status == s }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn" type="submit">查询</button>
+    {% if q or f_status %}<a class="btn btn-ghost" href="{{ url_for('orders.order_list') }}">清空</a>{% endif %}
+    <span class="toolbar-note">共 {{ pg.total }} 张订单</span>
+  </form>
+
+  <table class="table">
+    <thead><tr>
+      <th>订单号</th><th>订阅日期</th><th>截止日期</th>
+      {% if session['role'] != '订阅用户' %}<th>下单人</th><th>部门</th>{% else %}<th>主要报刊</th>{% endif %}
+      <th class="num">报刊种数</th><th class="num">份数合计</th>
+      <th class="num">总金额（元）</th><th>状态</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for o in pg.rows %}
+      <tr>
+        <td><a class="mono-link" href="{{ url_for('orders.order_detail', order_id=o.order_id) }}">{{ o.order_id }}</a></td>
+        <td>{{ o.sub_date|dt }}</td>
+        <td>{{ o.end_date|dt }}</td>
+        {% if session['role'] != '订阅用户' %}
+        <td>{{ o.sub_name }}</td><td class="dim">{{ o.dept_name }}</td>
+        {% else %}
+        <td>{{ o.pub_name }}</td>
+        {% endif %}
+        <td class="num">{{ o.det_cnt }}</td>
+        <td class="num">{{ o.total_qty }}</td>
+        <td class="num strong">{{ o.total_amount|money }}</td>
+        <td><span class="stamp {{ o.order_status|status_class }}">{{ o.order_status }}</span></td>
+        <td class="row-act"><a href="{{ url_for('orders.order_detail', order_id=o.order_id) }}">详情</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="9" class="empty">暂无订单{% if q or f_status %}，可调整查询条件{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% include "_pager.html" %}
+</section>
+{% endblock %}
