@@ -1,0 +1,6 @@
+mysql:
+  ip: "localhost"
+  port: 3306
+  user: "your-user"
+  password: "your-password"
+  database: "press_sub_db"

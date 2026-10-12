@@ -1,2 +1,15 @@
 docs/by teacher
 local
+
+config.yml
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 运行时产物
+webapp/backups/
+
+# 报告渲染产物（可由 docs/report/build_docx.py 与 Word 重新生成）
+docs/report/preview/
+docs/report/报告预览.pdf
