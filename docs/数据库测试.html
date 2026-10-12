@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>报刊订阅管理系统 — 数据库测试</title>
+<style>
+body{background:#f2f4f7;font-family:'SimSun','宋体',serif;color:#222;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 50px}
+header.top{background:#1F3A5F;color:#fff;border-radius:10px;padding:22px 28px;margin-bottom:20px}
+header.top h1{font-family:'Microsoft YaHei',sans-serif;font-size:24px;margin:0 0 8px}
+header.top p{margin:0;color:#C9D6EA;font-size:14px;font-family:'Microsoft YaHei',sans-serif;line-height:1.6}
+.card{background:#fff;border:1px solid #DFE4EA;border-radius:10px;padding:24px 30px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+h2.sec{font-family:'Microsoft YaHei',sans-serif;font-size:20px;color:#1F3A5F;border-left:5px solid #2B6CB0;padding-left:12px;margin:4px 0 14px}
+h3{font-family:'Microsoft YaHei',sans-serif;font-size:16px;color:#2C3E50;margin:16px 0 8px}
+p.body{font-size:16px;line-height:1.75;text-indent:2em;margin:8px 0;text-align:justify}
+p.body b.g{color:#1F3A5F}
+.note{background:#F7F9FC;border:1px dashed #B9C6D8;border-radius:8px;padding:12px 16px;font-size:14px;font-family:'Microsoft YaHei',sans-serif;color:#445;line-height:1.7}
+.note b{color:#B02418}
+table.tbl{border-collapse:collapse;width:100%;margin:10px 0 6px;font-size:14px;line-height:1.55}
+table.tbl th{border-top:2px solid #333;border-bottom:1.5px solid #333;padding:7px 8px;font-family:'Microsoft YaHei',sans-serif;font-size:13.5px;background:#F7F9FC}
+table.tbl td{border-bottom:1px solid #D8DEE6;padding:6px 8px;font-family:'SimSun','宋体',serif}
+table.tbl tbody tr:last-child td{border-bottom:2px solid #333}
+caption{caption-side:top;text-align:center;font-weight:600;font-size:14px;padding:6px 0;font-family:'SimSun','宋体',serif}
+code{font-family:Consolas,monospace;background:#F4F6F9;padding:1px 5px;border-radius:3px;font-size:13px;color:#1F3A5F}
+pre{background:#1F2933;color:#D8E1EA;border-radius:8px;padding:14px 18px;font-size:13px;line-height:1.6;overflow:auto;font-family:Consolas,monospace}
+footer{text-align:center;color:#889;font-size:13px;font-family:'Microsoft YaHei',sans-serif;margin-top:6px}
+@media print{body{background:#fff}.card{box-shadow:none;break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+<h1>数据库测试（报告第七章底稿）</h1>
+<p>报刊订阅管理系统 · 基于已加载的测试数据，对数据库访问功能与性能进行测试 · 2026-10</p>
+</header>
+
+<!-- ============================ 7.1 ============================ -->
+<div class="card">
+<h2 class="sec">7.1 加载测试数据</h2>
+<p class="body">测试数据由程序 <code>webapp/seed_data.py</code> 自动生成：以固定随机种子（2026）驱动，可重复执行且结果一致；数据内容参照真实业务场景构造（部门为高校组织机构、报刊为市面常见报刊名录、订阅单覆盖近 13 个月且四种状态按业务比例分布、口令统一为 SHA-256 摘要）。数据经 MySQL 8.0.40 实际写入，总行数如下表所示。</p>
+<table class="tbl">
+<caption>表 7-1 测试数据加载情况</caption>
+<thead><tr><th>数据表</th><th>行数</th><th>说明</th><th>是否满足 ≥50 条</th></tr></thead>
+<tbody>
+<tr><td>department（部门表）</td><td>52</td><td>高校职能部门 + 学院 + 教辅机构</td><td>满足</td></tr>
+<tr><td>subscriber（订阅人员表）</td><td>112</td><td>2 名系统管理员 + 52 名部门管理员 + 58 名订阅用户</td><td>满足</td></tr>
+<tr><td>category（报刊类别表）</td><td>52</td><td>分类字典，本期报刊覆盖其中 21 类</td><td>满足</td></tr>
+<tr><td>publication（报刊表）</td><td>56</td><td>日报/周报/半月刊/月刊/双月刊，单价 1.0~45.0 元</td><td>满足</td></tr>
+<tr><td>subscription（订阅单表）</td><td>125</td><td>近 13 个月，含待审核/已通过/已驳回/已退订四种状态</td><td>满足</td></tr>
+<tr><td>subscription_detail（订阅明细表）</td><td>215</td><td>每单 1~3 种报刊，小计与总金额由触发器自动计算</td><td>满足</td></tr>
+<tr><td>op_log（操作日志表）</td><td>436</td><td>触发器自动记录 + 程序补录的登录/查询/维护日志</td><td>满足</td></tr>
+</tbody>
+</table>
+<p class="body">数据示例（节选）：订阅单 <code>SO0000030</code> 由部门管理员为机械工程学院代订《新华每日电讯》1 份 365 期、《读者》2 份 365 期、《中国教育报》3 份 365 期，总金额 6 570.00 元，状态"已通过"；订阅用户"邓磊"（<code>denglei</code>）名下 1 张已通过订阅单，累计金额 1 404.00 元。四类订单状态分布为：已通过 71、待审核 35、已驳回 10、已退订 9（含功能测试与性能测试产生的数据）。</p>
+<div class="note"><b>演示账号：</b>系统管理员 <code>admin</code>，部门管理员 <code>dept01</code>，订阅用户为姓名拼音（如 <code>denglei</code>），口令均为 <code>123456</code>（库中以 SHA-256 摘要存储，与报告 5.2 节 password 字段设计一致）。</div>
+</div>
+
+<!-- ============================ 7.2 ============================ -->
+<div class="card">
+<h2 class="sec">7.2 功能测试</h2>
+<p class="body">功能测试按模块进行：在浏览器界面中按真实使用路径操作，同时以自动化脚本 <code>webapp/tests/test_e2e.py</code>（34 个断言）固化回归验证，两者结果一致。以下按模块给出测试结果。</p>
+
+<h3>7.2.1 登录与权限模块功能测试</h3>
+<table class="tbl">
+<caption>表 7-2 登录与权限模块测试结果表</caption>
+<thead><tr><th style="width:14%">测试功能</th><th style="width:32%">详细操作</th><th style="width:27%">预期效果</th><th style="width:27%">实际效果</th></tr></thead>
+<tbody>
+<tr><td>正常登录</td><td>登录页输入用户名 admin、口令 123456，点击"登 录"</td><td>进入系统管理员工作台，页头显示角色徽标</td><td>与预期效果相符合</td></tr>
+<tr><td>错误口令拦截</td><td>输入 admin / 错误口令提交</td><td>提示"用户名或口令不正确"，不进入系统</td><td>与预期效果相符合</td></tr>
+<tr><td>三角色界面区分</td><td>分别以 admin、dept01、denglei 登录</td><td>分别呈现全局工作台 / 部门工作台 / 我的订阅工作台，菜单随角色变化</td><td>与预期效果相符合</td></tr>
+<tr><td>越权访问拦截</td><td>订阅用户直接访问 /audit、/departments；部门管理员访问 /maintenance</td><td>返回 403"没有访问权限"页面</td><td>与预期效果相符合（403）</td></tr>
+<tr><td>数据库层权限兜底</td><td>以订阅用户对应数据库账号直接 SELECT 订阅单基表</td><td>被 MySQL 拒绝（ERROR 1142）</td><td>与预期效果相符合</td></tr>
+<tr><td>修改口令</td><td>个人中心提交原口令与新口令</td><td>更新成功，新口令以 SHA-256 摘要存储</td><td>与预期效果相符合</td></tr>
+<tr><td>口令重置</td><td>人员管理点击"重置口令"并确认</td><td>口令重置为 123456，摘要更新</td><td>与预期效果相符合</td></tr>
+</tbody>
+</table>
+
+<h3>7.2.2 基础数据管理模块功能测试（部门 / 人员 / 类别 / 报刊）</h3>
+<table class="tbl">
+<caption>表 7-3 基础数据管理模块测试结果表</caption>
+<thead><tr><th style="width:14%">测试功能</th><th style="width:32%">详细操作</th><th style="width:27%">预期效果</th><th style="width:27%">实际效果</th></tr></thead>
+<tbody>
+<tr><td>新增部门</td><td>部门管理 → 新增部门，填写名称/地点/电话提交</td><td>部门编号自动分配（D+5 位流水），列表出现新部门</td><td>与预期效果相符合</td></tr>
+<tr><td>编辑部门</td><td>点击"编辑"修改名称与办公地点，保存</td><td>修改保存成功，列表同步刷新</td><td>与预期效果相符合</td></tr>
+<tr><td>模糊查询部门</td><td>搜索框输入关键字查询</td><td>按名称/办公地点模糊匹配并分页显示</td><td>与预期效果相符合</td></tr>
+<tr><td>新增人员（口令加密）</td><td>人员管理 → 新增人员，填写姓名/部门/用户名提交</td><td>人员编号 EMP+流水自动分配，口令以 SHA-256 摘要入库（64 位十六进制，非明文）</td><td>与预期效果相符合</td></tr>
+<tr><td>人员筛选</td><td>按部门 + 角色组合筛选，姓名关键字模糊查询</td><td>列表按条件过滤，含"王姓订阅人"等模糊结果</td><td>与预期效果相符合</td></tr>
+<tr><td>删除被引用数据被拒</td><td>删除仍有人员归属的部门 / 有订阅明细的报刊 / 有报刊的类别</td><td>拒绝删除并提示外码约束原因</td><td>与预期效果相符合（ERROR 1451 转译为友好提示）</td></tr>
+<tr><td>报刊新增与删除</td><td>新增报刊（类别/刊期/单价），随后删除</td><td>编号 P+7 位流水自动分配；删除成功</td><td>与预期效果相符合</td></tr>
+<tr><td>唯一约束校验</td><td>新增与已有类别同名的报刊类别</td><td>提示"唯一性冲突"，不产生重复数据</td><td>与预期效果相符合</td></tr>
+</tbody>
+</table>
+
+<h3>7.2.3 订阅业务模块功能测试（下单 / 审核 / 退订）</h3>
+<table class="tbl">
+<caption>表 7-4 订阅业务模块测试结果表</caption>
+<thead><tr><th style="width:14%">测试功能</th><th style="width:32%">详细操作</th><th style="width:27%">预期效果</th><th style="width:27%">实际效果</th></tr></thead>
+<tbody>
+<tr><td>代订下单</td><td>部门管理员在"代订报刊"选择本部门人员、起止日期、报刊与份数期数，提交</td><td>订单号 SO+7 位流水自动生成，状态"待审核"，页面实时计算合计金额</td><td>与预期效果相符合</td></tr>
+<tr><td>金额自动计算</td><td>提交含 2 种报刊的订阅单（单价×份数×期数）</td><td>小计与总金额由触发器 trg_det_before_ins / trg_det_after_ins 自动计算，与页面预估一致</td><td>与预期效果相符合（如 1.50×2×26 + 6.00×1×12 = 150.00）</td></tr>
+<tr><td>追加订阅明细</td><td>订单详情页"追加报刊"选择报刊、份数、期数提交</td><td>仅待审核订单可追加；总金额自动累加</td><td>与预期效果相符合</td></tr>
+<tr><td>订单审核</td><td>系统管理员在审核工作台打开订单，填写意见，点击"通过"</td><td>状态变为"已通过"，审核人/审核时间/意见自动记录</td><td>与预期效果相符合</td></tr>
+<tr><td>审核状态机校验</td><td>对已审核订单再次执行状态变更（如改回"待审核"）</td><td>被触发器拒绝</td><td>与预期效果相符合</td></tr>
+<tr><td>非本人退订拦截</td><td>用其他订阅用户账号对他人订单执行退订请求</td><td>返回 403；数据库层存储过程同样校验"仅可退订本人订阅单"</td><td>与预期效果相符合（双重防线）</td></tr>
+<tr><td>退订</td><td>下单人（或其部门管理员）对"已通过"订单点击"申请退订"并确认</td><td>状态变为"已退订"，历史记录保留</td><td>与预期效果相符合</td></tr>
+<tr><td>非法日期拦截</td><td>下单时起订日期早于今天，或截止日期早于起订日期</td><td>页面提示拦截；绕过页面时 CHECK 约束 chk_ord_dates 仍会拒绝</td><td>与预期效果相符合</td></tr>
+</tbody>
+</table>
+
+<h3>7.2.4 查询统计与系统维护模块功能测试</h3>
+<table class="tbl">
+<caption>表 7-5 查询统计与系统维护模块测试结果表</caption>
+<thead><tr><th style="width:14%">测试功能</th><th style="width:32%">详细操作</th><th style="width:27%">预期效果</th><th style="width:27%">实际效果</th></tr></thead>
+<tbody>
+<tr><td>模糊查询</td><td>订阅查询页输入"王"并查询</td><td>返回所有王姓订阅人的订阅明细（姓名/报刊/部门/订单号均可模糊匹配）</td><td>与预期效果相符合</td></tr>
+<tr><td>组合条件查询</td><td>状态"已通过" + 订阅日期区间 + 部门筛选</td><td>按复合条件输出明细清单，可分页</td><td>与预期效果相符合</td></tr>
+<tr><td>行级数据隔离</td><td>订阅用户打开"我的订单"与订阅查询页</td><td>仅能看到本人订单（行级安全视图 v_user_orders 自动过滤）</td><td>与预期效果相符合</td></tr>
+<tr><td>部门数据隔离</td><td>部门管理员打开订单列表与查询页</td><td>仅能看到本部门订单</td><td>与预期效果相符合</td></tr>
+<tr><td>统计图表</td><td>打开统计分析页</td><td>近 12 个月订阅金额趋势、类别占比、报刊排行、部门对比正常渲染，口径为"已通过"订单</td><td>与预期效果相符合</td></tr>
+<tr><td>按人员统计</td><td>统计分析页按姓名关键字模糊查询人员汇总</td><td>输出订单数/份数/金额汇总（视图 v_person_stat）</td><td>与预期效果相符合</td></tr>
+<tr><td>打印 / 导出 PDF</td><td>查询与统计页点击"打印 / 导出 PDF"</td><td>打印视图隐藏侧栏与操作按钮，保留正文表格</td><td>与预期效果相符合</td></tr>
+<tr><td>操作日志</td><td>系统维护 → 操作日志，按类型/日期/关键字过滤</td><td>登录、下单、审核、退订、维护等操作均有记录（含触发器自动写入）</td><td>与预期效果相符合</td></tr>
+<tr><td>数据备份</td><td>系统维护点击"立即备份数据库"</td><td>调用 mysqldump 生成备份文件到 backups/ 目录</td><td>与预期效果相符合（未安装 mysqldump 时给出命令行提示）</td></tr>
+</tbody>
+</table>
+<p class="body">综合表 7-2 ~ 表 7-5，各功能模块的实际效果均与预期效果相符合，系统功能满足需求分析阶段提出的功能要求；34 项自动化断言（tests/test_e2e.py）全部通过，可作为回归测试基线。</p>
+</div>
+
+<!-- ============================ 7.3 ============================ -->
+<div class="card">
+<h2 class="sec">7.3 性能测试（选做加分项）</h2>
+<p class="body">性能测试脚本为 <code>webapp/tests/test_perf.py</code>，测试环境为本机 MySQL 8.0.40 与 Flask 开发服务器（127.0.0.1:5000），数据规模见表 7-1。测试分四组：A 组测典型页面响应时间（HTTP 层，各 30 次取样）；B 组测数据库层典型 SQL 响应时间（各 50 次取样）；C 组测并发查询；D 组测并发下单。</p>
+
+<h3>7.3.1 页面响应时间（A 组）</h3>
+<table class="tbl">
+<caption>表 7-6 典型页面响应时间（30 次取样）</caption>
+<thead><tr><th>测试页面</th><th>均值(ms)</th><th>P95(ms)</th><th>最小(ms)</th><th>最大(ms)</th></tr></thead>
+<tbody>
+<tr><td>登录页 GET /login</td><td>2.0</td><td>2.6</td><td>1.5</td><td>2.8</td></tr>
+<tr><td>工作台 GET /dashboard</td><td>21.7</td><td>33.7</td><td>11.3</td><td>34.4</td></tr>
+<tr><td>订阅查询（模糊"王"）GET /query?q=王</td><td>21.8</td><td>32.5</td><td>7.2</td><td>33.3</td></tr>
+<tr><td>统计分析 GET /stats</td><td>20.2</td><td>33.9</td><td>9.3</td><td>35.0</td></tr>
+<tr><td>订单列表 GET /orders</td><td>15.3</td><td>32.4</td><td>6.7</td><td>33.0</td></tr>
+<tr><td>人员管理 GET /subscribers</td><td>20.1</td><td>31.6</td><td>6.7</td><td>32.9</td></tr>
+</tbody>
+</table>
+<p class="body">各页面均值均低于 22 ms、P95 低于 34 ms，其中工作台因聚合查询较多略高于其他页面，整体响应迅速，满足交互式系统要求。</p>
+
+<h3>7.3.2 数据库层 SQL 响应时间（B 组）</h3>
+<table class="tbl">
+<caption>表 7-7 典型 SQL 响应时间（50 次取样）</caption>
+<thead><tr><th>SQL</th><th>均值(ms)</th><th>P95(ms)</th><th>最小(ms)</th><th>最大(ms)</th></tr></thead>
+<tbody>
+<tr><td>订单明细全景视图 v_order_detail（5 表连接）</td><td>0.63</td><td>0.93</td><td>0.50</td><td>1.20</td></tr>
+<tr><td>模糊查询：王姓订阅人明细（LIKE '王%'）</td><td>0.42</td><td>0.65</td><td>0.30</td><td>0.76</td></tr>
+<tr><td>模糊查询：报刊名称含"报"（LIKE '%报%'）</td><td>1.95</td><td>2.66</td><td>1.57</td><td>2.90</td></tr>
+<tr><td>按部门统计视图 v_dept_stat</td><td>1.02</td><td>1.44</td><td>0.76</td><td>1.64</td></tr>
+<tr><td>按报刊统计视图 v_pub_stat</td><td>1.01</td><td>1.44</td><td>0.74</td><td>1.78</td></tr>
+<tr><td>12 个月订阅趋势（分组聚合）</td><td>0.79</td><td>1.30</td><td>0.63</td><td>1.50</td></tr>
+<tr><td>函数 fn_person_total_amount</td><td>0.20</td><td>0.44</td><td>0.14</td><td>0.46</td></tr>
+</tbody>
+</table>
+<p class="body">最常用的多表连接视图 v_order_detail 均值 0.63 ms，得益于第 5 章的索引设计（idx_ord_orderer、idx_det_pub 等）；前缀模糊查询 <code>LIKE '王%'</code> 可利用 idx_sub_name 索引，耗时最低；两端模糊查询 <code>LIKE '%报%'</code> 无法使用索引需全表扫描，均值 1.95 ms，在当前数据规模下仍可接受，也与第 5.3 节"模糊查询以正确性优先"的设计取舍一致。</p>
+
+<h3>7.3.3 并发查询（C 组）</h3>
+<p class="body">20 个并发会话各连续发起 5 次订阅模糊查询（共 100 次请求），全部成功（成功率 100%），总耗时 0.44 s，吞吐约 229.6 req/s，无错误响应，说明应用层按角色划分的连接池在并发场景下工作稳定。</p>
+
+<h3>7.3.4 并发下单与死锁问题修复（D 组）</h3>
+<p class="body">10 个线程同时调用存储过程 <code>sp_place_order</code> 提交订阅单。初版取号实现采用 <code>SELECT ... FOR UPDATE</code> 锁定最近订单行，该场景下触发 MySQL 死锁（ERROR 1213）：多个事务同时以降序对主码索引加next-key锁后插入，形成插入意向锁冲突。定位后改用命名锁 <code>GET_LOCK('press_order_no', 10)</code> 对"取号"临界区串行化（见 5.3 节存储过程代码），重新测试结果如下：</p>
+<table class="tbl">
+<caption>表 7-8 并发下单取号唯一性验证（修复后）</caption>
+<thead><tr><th>测试项</th><th>结果</th></tr></thead>
+<tbody>
+<tr><td>并发线程数</td><td>10</td></tr>
+<tr><td>成功生成订阅单</td><td>10 张（无失败、无死锁）</td></tr>
+<tr><td>订单号唯一性</td><td>10/10 全部唯一（SO0000116 ~ SO0000125 区间内连续分配）</td></tr>
+</tbody>
+</table>
+<p class="body">修复后并发下单无死锁、无重复取号，验证了事务设计与命名锁方案的正确性。该问题由性能测试发现并闭环解决，体现了"测试驱动改进"的过程。</p>
+<div class="note"><b>结论：</b>在当前数据规模（每表 50~450 行）与本机环境下，系统各页面平均响应时间低于 30 ms，典型 SQL 均值低于 2 ms，20 并发查询成功率 100%，并发下单取号严格唯一，数据库访问功能与性能均满足课程设计要求。</div>
+</div>
+
+<footer>《数据库原理实践》课程设计 · 报刊订阅管理系统 · 数据库测试</footer>
+</div>
+</body>
+</html>
