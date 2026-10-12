@@ -124,9 +124,3 @@ python webapp/tests/test_perf.py    # 性能测试：响应时间 / 并发查询
 4. **金额一致性交给触发器**：小计 = 单价×份数×期数、总金额汇总均由触发器维护，应用层无法绕开。
 5. **认证最小特权**：登录校验走专用账号 `auth_app`，仅被授予 `subscriber` 表 5 列 SELECT
    与 `password` 列 UPDATE（列级授权）。
-
-## 说明
-
-- `config/config.yml`、`local/` 与教师资料目录均在 `.gitignore` 中，含口令的配置不会进入版本库。
-- `docs/report/preview/` 与 `报告预览.pdf` 为渲染产物，已忽略；需要时用 Word 从 docx 重新导出。
-- 开发环境：Windows 11 + Python 3.13 + MySQL 8.0.40；代码约 5000 行（不含第三方库）。
