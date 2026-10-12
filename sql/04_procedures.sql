@@ -1,12 +1,17 @@
 -- =====================================================================
 -- 报刊订阅管理系统 · 04 存储过程设计（物理结构优化 5.3）
 -- 关键业务以存储过程封装，内部使用显式事务保证原子性
+-- 注意：DROP PROCEDURE 会连带删除例程级的 EXECUTE 授权，
+--       单独重跑本脚本后必须再执行一次 06_permissions.sql 恢复授权。
 -- =====================================================================
 USE press_sub_db;
 DELIMITER $$
 
 -- 过程1：创建订阅单（含第一条订阅明细）
 -- 事务：订单号分配、订单头插入、明细插入必须同时成功或同时失败
+-- 并发：取号以命名锁 GET_LOCK 串行化。早期版本用 SELECT ... FOR UPDATE
+--       锁最近订单行，压力测试（10 线程并发下单）中暴露间隙锁死锁（1213），
+--       改为命名锁后消除死锁且取号仍严格唯一。
 DROP PROCEDURE IF EXISTS sp_place_order $$
 CREATE PROCEDURE sp_place_order(
     IN p_sub_id  CHAR(8),   -- 下单人
@@ -18,9 +23,11 @@ CREATE PROCEDURE sp_place_order(
 BEGIN
     DECLARE v_last  INT;
     DECLARE v_order CHAR(10);
+    DECLARE v_lock  INT;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
         ROLLBACK;
+        SELECT RELEASE_LOCK('press_order_no');
         RESIGNAL;
     END;
 
@@ -28,10 +35,15 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '订阅人员不存在';
     END IF;
 
+    -- 命名锁串行化取号（10 秒等待上限）
+    SELECT GET_LOCK('press_order_no', 10) INTO v_lock;
+    IF v_lock <> 1 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '下单繁忙，请稍后重试';
+    END IF;
+
     START TRANSACTION;
-    -- 锁定最近订单行再取号，防止并发取号重复
     SELECT CAST(SUBSTRING(order_id, 3) AS UNSIGNED) INTO v_last
-    FROM subscription ORDER BY order_id DESC LIMIT 1 FOR UPDATE;
+    FROM subscription ORDER BY order_id DESC LIMIT 1;
     SET v_order = CONCAT('SO', LPAD(IFNULL(v_last, 0) + 1, 7, '0'));
 
     INSERT INTO subscription (order_id, sub_date, start_date, end_date, order_status, orderer_id)
@@ -41,6 +53,7 @@ BEGIN
     VALUES (v_order, p_pub_id, p_qty, p_periods);
 
     COMMIT;
+    SELECT RELEASE_LOCK('press_order_no');
     SELECT v_order AS order_id;
 END $$
 

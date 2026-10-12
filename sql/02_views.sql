@@ -12,13 +12,16 @@ SELECT s.sub_id, s.sub_name, s.gender, s.phone, s.address,
 FROM subscriber s
 JOIN department d ON d.dept_id = s.dept_id;
 
--- 视图2：订阅单明细全景（订单 + 下单人 + 部门 + 报刊 + 明细）
--- 需求：按人员/报刊/部门查询订阅信息，是最常用的多表连接，定义为视图简化操作（简单性）
+-- 视图2：订阅单明细全景（订单 + 下单人 + 部门 + 报刊 + 明细 + 审核痕迹）
+-- 需求：按人员/报刊/部门查询订阅信息，是最常用的多表连接，定义为视图简化操作（简单性）；
+--       同时供系统管理员/部门管理员的订单详情页使用（含审核人与审核意见）
 CREATE OR REPLACE VIEW v_order_detail AS
 SELECT o.order_id, o.sub_date, o.start_date, o.end_date,
        o.order_status, o.total_amount,
+       o.auditor_id, o.audit_time, o.audit_comment,
        s.sub_id, s.sub_name, d.dept_name,
-       p.pub_id, p.pub_name, det.quantity, det.periods, det.subtotal
+       p.pub_id, p.pub_name, p.period, p.unit_price,
+       det.quantity, det.periods, det.subtotal
 FROM subscription o
 JOIN subscriber s ON s.sub_id = o.orderer_id
 JOIN department d ON d.dept_id = s.dept_id
@@ -78,16 +81,22 @@ WHERE o.order_status = '已通过'
 GROUP BY p.pub_id, p.pub_name, c.cat_name, p.period, p.unit_price;
 
 -- 视图7：个人订单视图（行级安全）
--- 需求：订阅用户只能查看自己的订单。视图按数据库登录账号自动过滤
--- （数据库账号名与订阅人员用户名一致时生效，体现行级访问控制思想）
+-- 需求：订阅用户只能查看自己的订单。视图按登录账号自动过滤：
+--   ① 直连数据库：约定“数据库账号名 = 订阅人员用户名”；
+--   ② Web 应用：登录时为人员动态创建同名 MySQL 账号并授予对应角色，
+--      会话内所有操作以该账号执行。
+--   注意必须用 USER() 而不是 CURRENT_USER()——后者在 DEFINER 权限的
+--   视图内部返回定义者（root），USER() 始终反映实际连接账号。
 CREATE OR REPLACE VIEW v_user_orders AS
 SELECT o.order_id, o.sub_date, o.start_date, o.end_date,
        o.total_amount, o.order_status,
-       p.pub_name, det.quantity, det.periods, det.subtotal
+       o.auditor_id, o.audit_time, o.audit_comment,
+       p.pub_id, p.pub_name, p.period, p.unit_price,
+       det.quantity, det.periods, det.subtotal
 FROM subscription o
 JOIN subscription_detail det ON det.order_id = o.order_id
 JOIN publication p ON p.pub_id = det.pub_id
 WHERE o.orderer_id = (
     SELECT s.sub_id FROM subscriber s
-    WHERE s.username = SUBSTRING_INDEX(CURRENT_USER(), '@', 1)
+    WHERE s.username = SUBSTRING_INDEX(USER(), '@', 1)
 );

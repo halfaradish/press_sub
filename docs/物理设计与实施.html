@@ -197,20 +197,28 @@ CREATE PROCEDURE sp_place_order(
 BEGIN
     DECLARE v_last  INT;
     DECLARE v_order CHAR(10);
+    DECLARE v_lock  INT;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
-    BEGIN ROLLBACK; RESIGNAL; END;
+    BEGIN ROLLBACK; SELECT RELEASE_LOCK('press_order_no'); RESIGNAL; END;
     IF NOT EXISTS (SELECT 1 FROM subscriber WHERE sub_id = p_sub_id) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '订阅人员不存在';
     END IF;
+    -- 取号临界区以命名锁串行化：初版 SELECT … FOR UPDATE 在 10 线程
+    -- 并发下单压测中暴露间隙锁死锁（1213），改为 GET_LOCK 后消除死锁
+    SELECT GET_LOCK('press_order_no', 10) INTO v_lock;
+    IF v_lock <> 1 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '下单繁忙，请稍后重试';
+    END IF;
     START TRANSACTION;
     SELECT CAST(SUBSTRING(order_id,3) AS UNSIGNED) INTO v_last
-    FROM subscription ORDER BY order_id DESC LIMIT 1 FOR UPDATE;
+    FROM subscription ORDER BY order_id DESC LIMIT 1;
     SET v_order = CONCAT('SO', LPAD(IFNULL(v_last,0)+1, 7, '0'));
     INSERT INTO subscription (order_id, sub_date, start_date, end_date, order_status, orderer_id)
     VALUES (v_order, CURDATE(), p_start, p_end, '待审核', p_sub_id);
     INSERT INTO subscription_detail (order_id, pub_id, quantity, periods)
     VALUES (v_order, p_pub_id, p_qty, p_periods);
     COMMIT;
+    SELECT RELEASE_LOCK('press_order_no');
     SELECT v_order AS order_id;
 END</div>
 
@@ -259,7 +267,7 @@ BEGIN
 END $$</div>
 
   <h3>5.3.5 事务设计</h3>
-  <p class="body">所有业务写过程内部均使用显式事务：START TRANSACTION 开启，全部成功后 COMMIT；任一语句异常由 DECLARE EXIT HANDLER FOR SQLEXCEPTION 捕获并 ROLLBACK，再由 RESIGNAL 将错误抛给应用。以"创建订阅单"为例，订单号分配、订单头写入、明细写入三步必须原子完成——若明细插入失败（如报刊不存在、份数越界），订单头一并回滚，杜绝"空订单"。并发控制方面，取号前使用 SELECT … FOR UPDATE 对最近订单行加锁，避免两个并发请求取得相同订单号；订单汇总行的更新由 InnoDB 行锁天然串行化。</p>
+  <p class="body">所有业务写过程内部均使用显式事务：START TRANSACTION 开启，全部成功后 COMMIT；任一语句异常由 DECLARE EXIT HANDLER FOR SQLEXCEPTION 捕获并 ROLLBACK，再由 RESIGNAL 将错误抛给应用。以"创建订阅单"为例，订单号分配、订单头写入、明细写入三步必须原子完成——若明细插入失败（如报刊不存在、份数越界），订单头一并回滚，杜绝"空订单"。并发控制方面，取号临界区以命名锁 GET_LOCK('press_order_no', 10) 串行化，避免两个并发请求取得相同订单号——初版采用 SELECT … FOR UPDATE 锁定最近订单行，性能测试（10 线程并发下单）中暴露间隙锁死锁（ERROR 1213），改为命名锁后死锁消除且取号保持严格唯一（详见 7.3.4 节）；订单汇总行的更新由 InnoDB 行锁天然串行化。</p>
   <p class="body">事务隔离级别采用 MySQL 默认的 REPEATABLE READ：审核、退订等校验-更新序列均在事务内先 FOR UPDATE 读取最新状态再更新，避免了幻读导致的重复审核。</p>
 
   <h3>5.3.6 权限控制设计</h3>
