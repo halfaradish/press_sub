@@ -21,14 +21,17 @@ bp = Blueprint("orders", __name__)
 ORDER_STATUSES = ["待审核", "已通过", "已驳回", "已退订"]
 
 
-def _order_scope(where_sub_of_order: str = "d.sub_id") -> tuple:
-    """按登录角色返回订单数据的过滤条件（应用层行级隔离）。"""
+def _order_scope() -> tuple:
+    """按登录角色返回订单数据的过滤条件（应用层行级隔离）。
+
+    订阅用户走 v_user_orders，视图自身已按 USER() 过滤本人订单，无需追加条件。
+    """
     role = session["role"]
     if role == "系统管理员":
         return "", ()
     if role == "部门管理员":
-        return " AND d.dept_name = %s", (session["dept_name"],)
-    return f" AND {where_sub_of_order} = %s", (session["sub_id"],)
+        return " AND dept_name = %s", (session["dept_name"],)
+    return "", ()
 
 
 def _order_view() -> str:
@@ -41,7 +44,7 @@ def _order_view() -> str:
 def _order_level_rows(extra: str, args: tuple, per_page=10):
     """从明细级视图聚合出订单级列表（含状态/关键字筛选）。"""
     view = _order_view()
-    cond, scope_args = _order_scope("sub_id")
+    cond, scope_args = _order_scope()
     name_col = "pub_name" if view == "v_user_orders" else "sub_name"
     dept_col = (", SUBSTRING_INDEX(GROUP_CONCAT(dept_name), ',', 1) AS dept_name"
                 if view == "v_order_detail" else "")
@@ -60,19 +63,26 @@ def _order_level_rows(extra: str, args: tuple, per_page=10):
 def _order_head(order_id: str):
     """按角色取订单头（明细级视图聚合为订单级）；不可见返回 None。"""
     view = _order_view()
+    # v_user_orders（订阅用户行级视图）不含下单人 / 部门 / 人员编号列
+    extra_cols = (
+        " SUBSTRING_INDEX(GROUP_CONCAT(sub_name), ',', 1) AS sub_name,"
+        " SUBSTRING_INDEX(GROUP_CONCAT(dept_name), ',', 1) AS dept_name,"
+        " MAX(sub_id) AS orderer_id,"
+        if view == "v_order_detail" else "")
     head = db.query(
         f"SELECT order_id, MAX(sub_date) AS sub_date, MAX(start_date) AS start_date,"
         f" MAX(end_date) AS end_date, MIN(order_status) AS order_status,"
         f" MAX(total_amount) AS total_amount, MAX(auditor_id) AS auditor_id,"
         f" MAX(audit_time) AS audit_time, MAX(audit_comment) AS audit_comment,"
-        f" SUBSTRING_INDEX(GROUP_CONCAT(sub_name), ',', 1) AS sub_name,"
-        f" SUBSTRING_INDEX(GROUP_CONCAT(dept_name), ',', 1) AS dept_name,"
-        + ("MAX(sub_id) AS orderer_id, " if view == "v_order_detail" else "") +
+        + extra_cols +
         f" COUNT(*) AS det_cnt"
         f" FROM {view} WHERE order_id = %s GROUP BY order_id",
         (order_id,), one=True)
     if head is None:
         return None
+    if view == "v_user_orders":
+        head["sub_name"] = session.get("sub_name")
+        head["dept_name"] = session.get("dept_name")
     if session["role"] == "部门管理员" and head["dept_name"] != session["dept_name"]:
         return None
     return head

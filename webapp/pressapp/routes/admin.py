@@ -338,7 +338,7 @@ def publications():
     pg = paginate(
         "SELECT p.*, c.cat_name, s.sub_name AS maintainer_name"
         " FROM publication p JOIN category c ON c.cat_id = p.cat_id"
-        " LEFT JOIN subscriber s ON s.sub_id = p.maintainer"
+        " LEFT JOIN v_user_brief s ON s.sub_id = p.maintainer"
         " WHERE 1=1" + where + " ORDER BY p.pub_id",
         "SELECT COUNT(*) FROM publication p WHERE 1=1" + where, tuple(args))
     cats = db.query("SELECT cat_id, cat_name FROM category ORDER BY cat_id")
